@@ -1,0 +1,31 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"lib": ["ES2022"],
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"experimentalDecorators": true,
+		"useDefineForClassFields": false,
+		"noEmit": true
+	},
+	/**
+	 * No path aliases on purpose: this project is also compiled by esbuild
+	 * (`build:game`), which resolves imports with this file. Everything shared
+	 * with the Next app is imported relatively — and only the two browser-agnostic
+	 * modules are listed here; the rest of `src/lib` is client code.
+	 */
+	"include": [
+		"**/*.ts",
+		"../db/**/*.ts",
+		"../../lib/protocol.ts",
+		"../../lib/timeControls.ts",
+		/* Ambient declarations shared with the Next project — see the file. */
+		"../../../types/*.d.ts"
+	],
+	"exclude": ["../../../node_modules"]
+}

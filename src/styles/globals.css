@@ -1,0 +1,299 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/**
+ * Themes are class-based (next-themes writes `light` / `dark` / `midnight` /
+ * `parchment` onto <html>), so the `dark:` variant has to follow the class
+ * rather than the OS setting — otherwise picking Light on a dark machine would
+ * leave half the page in dark mode.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/**
+ * Semantic tokens, not raw palette entries: components say `bg-card` and every
+ * theme below decides what that means. Adding a theme is adding one block here
+ * — no component has to know it exists.
+ *
+ * These are the *source*. shadcn's vocabulary is derived from them further
+ * down, so there is one palette and not two: restyling the site is still a
+ * matter of editing this block, and a component added by `shadcn add` inherits
+ * the result without being touched.
+ */
+@theme {
+	--font-sans:
+		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+		"Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+	/* The wordmark only. Kept out of --font-sans so that nothing else can
+	   quietly start using the brand face. */
+	--font-brand:
+		var(--font-brand-face), var(--font-geist-sans), ui-sans-serif, system-ui,
+		sans-serif;
+
+	/* Light: chess.com's off-white page with white cards. */
+	--color-canvas: #edebe9;
+	--color-surface: #ffffff;
+	--color-elevated: #f4f3f1;
+	--color-line: #d8d5d2;
+	--color-fg: #2b2926;
+	--color-ink: #6f6c68;
+	--color-subtle: #96938f;
+	/* Their green, and the lighter shade they hover to. `accent-edge` is the
+	   darker bottom lip that gives primary buttons their pressed-key look. */
+	--color-brand: #81b64c;
+	--color-brand-strong: #a3d160;
+	--color-brand-edge: #5d8b34;
+	--color-brand-soft: #eaf3df;
+	--color-brand-fg: #ffffff;
+	--color-danger: #dc2626;
+	--color-danger-soft: #fef2f2;
+	--color-warning: #b45309;
+	--color-warning-soft: #fffbeb;
+
+	/* How far the captured-piece silhouettes are lifted off black: 0 draws them
+	   black, 1 draws them white. A light theme wants a dark grey — 0.38 lands on
+	   #616161, which is `--color-ink` to within a shade, so the strip reads as
+	   muted text next to the advantage number it sits beside. */
+	--captured-tone: 0.38;
+}
+
+.dark {
+	color-scheme: dark;
+	/* Dark: the warm brown-grey chess.com is known for, not a neutral zinc. */
+	--color-canvas: #302e2b;
+	--color-surface: #272522;
+	--color-elevated: #3c3936;
+	--color-line: #45413d;
+	--color-fg: #f1f0ee;
+	--color-ink: #b0aca7;
+	--color-subtle: #8b8783;
+	--color-brand: #81b64c;
+	--color-brand-strong: #a3d160;
+	--color-brand-edge: #5d8b34;
+	--color-brand-soft: #35401f;
+	--color-brand-fg: #14210a;
+	--color-danger: #f87171;
+	--color-danger-soft: #2a1416;
+	--color-warning: #fbbf24;
+	--color-warning-soft: #2a1f0d;
+	/* Light silhouettes on a dark page: 0.65 is #a6a6a6. */
+	--captured-tone: 0.65;
+}
+
+.midnight {
+	color-scheme: dark;
+	--color-canvas: #070b16;
+	--color-surface: #0e1526;
+	--color-elevated: #172038;
+	--color-line: #1f2a44;
+	--color-fg: #e6ecf8;
+	--color-ink: #93a2c0;
+	--color-subtle: #64748b;
+	--color-brand: #4f46e5;
+	--color-brand-strong: #6366f1;
+	--color-brand-edge: #3730a3;
+	--color-brand-soft: #1b2145;
+	--color-brand-fg: #ffffff;
+	--color-danger: #fb7185;
+	--color-danger-soft: #2b1220;
+	--color-warning: #fbbf24;
+	--color-warning-soft: #251c0e;
+	/* Light silhouettes on a dark page: 0.65 is #a6a6a6. */
+	--captured-tone: 0.65;
+}
+
+.parchment {
+	color-scheme: light;
+	--color-canvas: #f2e8d5;
+	--color-surface: #fbf5e9;
+	--color-elevated: #eee1c8;
+	--color-line: #ddcdab;
+	--color-fg: #3b2f1e;
+	--color-ink: #7a6a52;
+	--color-subtle: #a3937a;
+	--color-brand: #8b5e34;
+	--color-brand-strong: #a1724a;
+	--color-brand-edge: #6b4526;
+	--color-brand-soft: #ebdfc6;
+	--color-brand-fg: #fdf8ee;
+	--color-danger: #b3261e;
+	--color-danger-soft: #f6e2df;
+	--color-warning: #8a5a12;
+	--color-warning-soft: #f2e6cd;
+}
+
+/**
+ * Board palettes are declared in `src/lib/themes.ts` and injected as
+ * `[data-board="…"]` rules by the theme provider, so the swatches in the
+ * picker and the squares on the board can never disagree. They land as CSS
+ * variables (rather than inline colours) so next-themes' pre-paint script
+ * settles the board before the first frame.
+ */
+
+/**
+ * shadcn's vocabulary, resolved from the tokens above.
+ *
+ * Declared once rather than per theme, and that is the whole trick: these are
+ * `var()` references, so they re-resolve wherever `.dark`, `.midnight` or
+ * `.parchment` redefines the token underneath. Four themes, one definition,
+ * and a new theme needs nothing added here.
+ *
+ * Where the two systems disagree on a word, ours moved: the brand green is
+ * `primary` (shadcn's `accent` is the quiet fill behind a hovered menu item),
+ * and our secondary text is `muted-foreground` (shadcn's `muted` is a surface).
+ */
+:root {
+	--background: var(--color-canvas);
+	--foreground: var(--color-fg);
+
+	--card: var(--color-surface);
+	--card-foreground: var(--color-fg);
+	--popover: var(--color-surface);
+	--popover-foreground: var(--color-fg);
+
+	--primary: var(--color-brand);
+	--primary-foreground: var(--color-brand-fg);
+	--secondary: var(--color-elevated);
+	--secondary-foreground: var(--color-fg);
+
+	--muted: var(--color-elevated);
+	--muted-foreground: var(--color-ink);
+	--accent: var(--color-elevated);
+	--accent-foreground: var(--color-fg);
+
+	--destructive: var(--color-danger);
+	--border: var(--color-line);
+	--input: var(--color-line);
+	--ring: var(--color-brand);
+
+	/* Left as our own `rounded-lg` measures today, so adopting shadcn does not
+	   quietly round every corner on the site by a sixteenth of a rem. */
+	--radius: 0.5rem;
+
+	--sidebar: var(--color-surface);
+	--sidebar-foreground: var(--color-fg);
+	--sidebar-primary: var(--color-brand);
+	--sidebar-primary-foreground: var(--color-brand-fg);
+	--sidebar-accent: var(--color-elevated);
+	--sidebar-accent-foreground: var(--color-fg);
+	--sidebar-border: var(--color-line);
+	--sidebar-ring: var(--color-brand);
+
+	/* Nothing charts with these yet — the sparklines name their own colour —
+	   but a shadcn chart dropped in tomorrow should not arrive in stock grey. */
+	--chart-1: var(--color-brand);
+	--chart-2: var(--color-brand-strong);
+	--chart-3: var(--color-warning);
+	--chart-4: var(--color-danger);
+	--chart-5: var(--color-subtle);
+}
+
+/**
+ * The half of shadcn's theme that has to stay: it is what turns the variables
+ * above into `bg-primary`, `text-muted-foreground` and the rest.
+ *
+ * Trimmed of what the CLI generates for a greenfield project — its own light
+ * and dark palettes (ours are above) and a `--font-sans: var(--font-sans)`
+ * that is circular and silently drops the site to a fallback serif.
+ */
+@theme inline {
+	--font-heading: var(--font-sans);
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
+
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-ring: var(--sidebar-ring);
+
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
+	--radius-2xl: calc(var(--radius) * 1.8);
+	--radius-3xl: calc(var(--radius) * 2.2);
+	--radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+	html {
+		@apply font-sans;
+	}
+}
+
+@layer base {
+	/* Recharts stamps `tabindex="-1"` on its own internal <g> layers and on the
+	   tooltip wrapper, whether or not the accessibility layer is on. That is not
+	   reachable by Tab, but it *is* focusable by mouse — so clicking a sparkline
+	   focuses a group that holds no control, and the browser draws a focus ring
+	   around the whole plot. `outline-ring/50` above then paints it in the brand
+	   colour, which makes it look deliberate rather than like the accident it is.
+	
+	   Only `-1` is silenced. A chart rendered with `accessibilityLayer` gets a
+	   real `tabindex="0"` on its wrapper, and that one is a genuine tab stop that
+	   must keep its ring. */
+	.recharts-wrapper [tabindex="-1"]:focus {
+		outline: none;
+	}
+}
+
+/**
+ * The wordmark's outline, in the colour of whatever is behind it, so the name
+ * keeps a clean edge where it laps over the piece.
+ *
+ * Eight hard copies rather than a blur: `text-shadow` with a radius softens
+ * into the piece and muddies the green, while copies at a fixed distance give a
+ * crisp gap at any size. The diagonals are pulled in by √½ (0.055 → 0.0389) so
+ * the corners sit no further out than the sides, which is what makes it read as
+ * an even outline rather than a star.
+ *
+ * A utility rather than an inline style so the component stays classes-only,
+ * and rather than an arbitrary property because eight offsets do not belong in
+ * a class attribute.
+ */
+@utility brand-outline {
+	--halo: var(--brand-halo, var(--color-surface));
+	text-shadow:
+		0.055em 0 0 var(--halo),
+		-0.055em 0 0 var(--halo),
+		0 0.055em 0 var(--halo),
+		0 -0.055em 0 var(--halo),
+		0.0389em 0.0389em 0 var(--halo),
+		0.0389em -0.0389em 0 var(--halo),
+		-0.0389em 0.0389em 0 var(--halo),
+		-0.0389em -0.0389em 0 var(--halo);
+}

@@ -1,0 +1,211 @@
+# Three containers: the app, the game server, and their shared database.
+#
+#   docker compose --env-file .env.docker up -d --build
+#
+# Configuration comes from one file — `.env.docker`, copied from
+# `.env.docker.example` — and `--env-file` is what makes compose read it both
+# for the ${...} substitutions below and for the services themselves. Leave it
+# off and compose falls back to `.env`, which is the development one.
+#
+# To bring up a throwaway stack beside the real one, point both at another file
+# and give it its own project name, so neither the containers nor the database
+# volume collide:
+#
+#   ENV_FILE=.env.docker.test docker compose -p esahist-test \n#     --env-file .env.docker.test up -d --build
+#
+# ---------------------------------------------------------------------------
+# The one thing that will catch you
+# ---------------------------------------------------------------------------
+# The game server authenticates players by reading the Auth.js session cookie
+# off the join request, which means the browser has to be willing to send it
+# there. A cookie travels to the domain it was issued for and to subdomains of
+# an explicit `domain` — and nowhere else. So in production:
+#
+#   app          https://esahist.ro          →  AUTH_URL
+#   game server  https://game.esahist.ro     →  NEXT_PUBLIC_GAME_SERVER_URL
+#   cookie       .esahist.ro                 →  AUTH_COOKIE_DOMAIN
+#
+# Get that wrong and nothing errors: every player is quietly seated as a guest,
+# with no name, no rating, and a game that cannot be saved because a guest has
+# no user row to point at.
+#
+# Neither app container terminates TLS or serves a public port: both bind to
+# loopback, and the `caddy` service below is the only thing facing the
+# internet. It holds a certificate for each hostname above and forwards over
+# the compose network, WebSocket upgrades included — set SITE_DOMAIN and
+# GAME_DOMAIN to those same two names.
+#
+# Standing this up on a fresh server — DNS, firewall, first boot — is walked
+# through in docs/DEPLOY.md.
+
+name: esahist
+
+services:
+  # ---------------------------------------------------------------- database
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    # utf8mb4 explicitly rather than by default: a flair, a status line or a
+    # display name can hold an emoji, and the older utf8 is three bytes wide and
+    # silently truncates them.
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env.docker}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-chess}
+      MYSQL_USER: ${MYSQL_USER:-chess}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env.docker}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    # Loopback only. The other containers reach it over the compose network as
+    # `mysql:3306`; this line is for backups and drizzle-kit from the host.
+    ports:
+      - "127.0.0.1:${MYSQL_HOST_PORT:-3306}:3306"
+    healthcheck:
+      # `--silent` so the password never lands in the container's log.
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "--silent",
+          "-h",
+          "127.0.0.1",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      # First boot initialises the data directory, which takes longer than a
+      # restart; retries during this window do not count as failures.
+      start_period: 60s
+
+  # --------------------------------------------------------------- the app
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      args:
+        # Inlined into the client bundle at build time, so a change here needs
+        # `--build` to take effect. See the note at the top of this file.
+        NEXT_PUBLIC_GAME_SERVER_URL: ${NEXT_PUBLIC_GAME_SERVER_URL:?set NEXT_PUBLIC_GAME_SERVER_URL in .env.docker}
+    restart: unless-stopped
+    env_file:
+      - "${ENV_FILE:-.env.docker}"
+    environment:
+      # Overrides whatever the env file says: inside the network the database is
+      # a service name, never localhost.
+      DATABASE_URL: mysql://${MYSQL_USER:-chess}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-chess}
+      NODE_ENV: production
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_HOST_PORT:-3000}:3000"
+    # PID 1 in a container reaps nothing and forwards no signals by default;
+    # this puts a real init there so SIGTERM arrives and zombies do not pile up.
+    init: true
+
+  # ------------------------------------------------------- the game server
+  game:
+    build:
+      context: .
+      dockerfile: docker/game.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - "${ENV_FILE:-.env.docker}"
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-chess}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-chess}
+      NODE_ENV: production
+      GAME_PORT: 2567
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${GAME_HOST_PORT:-2567}:2567"
+    init: true
+    # Colyseus drains on SIGTERM: it waits for every room to dispose so games in
+    # progress get their `onBeforeShutdown` and are persisted rather than lost.
+    # Kill it sooner and you throw away whatever was being played.
+    stop_grace_period: 90s
+
+  # ------------------------------------------------------------- the proxy
+  # The only service that listens on a public port. It terminates TLS for both
+  # hostnames, obtaining and renewing the certificates itself over ACME, and
+  # forwards to the other two over the compose network.
+  #
+  # For that first certificate to be issued, the DNS records must already
+  # resolve to this machine and port 80 must be reachable from the internet:
+  # the challenge is an inbound request to http://<domain>/.well-known/...
+  # that Let's Encrypt makes itself. Bring this up before DNS has propagated
+  # and it will fail, back off, and retry — nothing is broken, but the site is
+  # not served until it succeeds.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    env_file:
+      - "${ENV_FILE:-.env.docker}"
+    # Named again here, and required, because the Caddyfile substitutes them
+    # directly into its own syntax: an empty SITE_DOMAIN is a site block with no
+    # address, and an empty ACME_EMAIL is `email` with no argument. Either one is
+    # a parse error, and a parse error in here is a container that restarts
+    # forever while the site is down. Better to refuse to start, and say why.
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in .env.docker}
+      GAME_DOMAIN: ${GAME_DOMAIN:?set GAME_DOMAIN in .env.docker}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env.docker}
+    ports:
+      - "80:80"
+      - "443:443"
+      # HTTP/3. Harmless to publish and skipped by clients that cannot use it.
+      - "443:443/udp"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Where the certificates and the ACME account key live. Losing this
+      # volume means re-issuing on every recreate, and Let's Encrypt rate
+      # limits that to five per week per hostname — which is how a routine
+      # `down -v` turns into a site that cannot serve TLS until Monday.
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+      - game
+
+  # ------------------------------------------------------------ migrations
+  # Deliberately not part of `up`. Schema changes on container start are how
+  # people lose data — a bad deploy would apply them before anyone could stop
+  # it. Run it yourself, when you mean it:
+  #
+  #   docker compose --env-file .env.docker --profile migrate run --rm migrate
+  #
+  # The default command is `db:push`, which reconciles the database against
+  # `schema.ts` and is what this project has used so far. Before v1 goes out,
+  # move to generated SQL: `pnpm db:generate` commits the migration files, and
+  # then this command becomes `pnpm db:migrate` — reviewable, ordered, and
+  # replayable, which `push` is not.
+  migrate:
+    profiles: [migrate]
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      # The build stage still has the source and the dev dependencies, which is
+      # where drizzle-kit lives.
+      target: build
+      args:
+        NEXT_PUBLIC_GAME_SERVER_URL: ${NEXT_PUBLIC_GAME_SERVER_URL}
+    env_file:
+      - "${ENV_FILE:-.env.docker}"
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-chess}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE:-chess}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: ["pnpm", "db:push"]
+
+volumes:
+  mysql-data:
+  caddy-data:
+  caddy-config:

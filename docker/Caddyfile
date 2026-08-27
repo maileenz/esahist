@@ -1,0 +1,86 @@
+# The reverse proxy.
+#
+# Two public hostnames, one certificate each, obtained and renewed without
+# being asked. Everything behind this file binds to loopback or to the compose
+# network only, so this is the entire public surface of the deployment.
+#
+# Hostnames come from the environment rather than being written here, so the
+# same file serves the real domain and a staging one:
+#
+#   SITE_DOMAIN=esahist.ro
+#   GAME_DOMAIN=game.esahist.ro
+#   ACME_EMAIL=you@example.com
+#
+# Caddy reaches the app containers by service name over the compose network.
+# `web:3000` is not a port published on the host — the host binding in
+# docker-compose.yml exists for debugging and could be removed entirely without
+# affecting anything here.
+{
+	# Where Let's Encrypt writes if renewal ever stops working. It is the one
+	# notification worth having: certificates renew silently for a year and
+	# then, if something has quietly broken, the site stops loading.
+	email {$ACME_EMAIL}
+}
+
+# Applied to both sites.
+(hardening) {
+	header {
+		# A promise, not a setting. Once a browser has seen this header it will
+		# refuse plain http for this domain for the stated duration — serve it
+		# over http again inside that year and the site is unreachable rather
+		# than merely insecure. `includeSubDomains` covers the game host too,
+		# which is already https.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		# Caddy names itself in every response otherwise.
+		-Server
+	}
+}
+
+# ------------------------------------------------------------------ the app
+{$SITE_DOMAIN} {
+	import hardening
+
+	# Next compresses its own responses; this catches whatever it does not.
+	# Caddy skips anything that already carries a Content-Encoding, so the two
+	# do not stack.
+	encode zstd gzip
+
+	reverse_proxy web:3000
+}
+
+# The www form, redirected rather than served — two hostnames answering the
+# same content splits sessions, because a cookie issued for one is not sent to
+# the other. Needs a `www` A record; delete this block if you did not add one.
+www.{$SITE_DOMAIN} {
+	import hardening
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+# ---------------------------------------------------------- the game server
+{$GAME_DOMAIN} {
+	import hardening
+
+	# No `encode` here: this host answers a health check and then upgrades to
+	# WebSocket, and compressing frames buys nothing on messages this small.
+	#
+	# There is also no websocket directive, because none is needed. Caddy
+	# forwards the Upgrade in place and sets X-Forwarded-For / -Proto itself,
+	# which is the whole reason it is here instead of nginx.
+	reverse_proxy game:2567
+}
+
+# The Colyseus dashboard is mounted at /monitor when MONITOR_PASSWORD is set.
+# Basic auth guards it, but it can inspect and dispose live rooms, so consider
+# not exposing it to the internet at all. To restrict it to your own address,
+# add this inside the {$GAME_DOMAIN} block above:
+#
+#   @monitor path /monitor*
+#   handle @monitor {
+#       @allowed remote_ip 203.0.113.4
+#       handle @allowed {
+#           reverse_proxy game:2567
+#       }
+#       respond 404
+#   }

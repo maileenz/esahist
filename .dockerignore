@@ -1,0 +1,42 @@
+# What never belongs in a build context.
+#
+# Secrets first: an image layer is public to anyone who can pull it, and
+# `COPY . .` would bake the .env straight into one. The containers read their
+# configuration at run time instead, from the env file compose points them at.
+.env
+.env.*
+!.env.example
+
+# Build output. Both are produced inside the image; copying the host's would
+# ship whatever happened to be lying around, including a Next build made with a
+# different NEXT_PUBLIC_GAME_SERVER_URL baked into it.
+.next
+.game-build
+out
+dist
+
+node_modules
+**/node_modules
+
+.git
+.gitignore
+.github
+
+# Local tooling and scratch space.
+.claude
+.vscode
+.idea
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Nothing here changes what the server does.
+README.md
+docker/README.md
+*.md
+!package.json
+
+# Test and type artefacts.
+coverage
+tsconfig.tsbuildinfo
+next-env.d.ts

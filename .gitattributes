@@ -1,0 +1,5 @@
+# Shell scripts run on Linux servers. With core.autocrlf=true on Windows a
+# checkout would hand them Windows line endings, and a shebang line ending in
+# a carriage return fails on the far end with an error that names no file and
+# explains nothing.
+*.sh text eol=lf
