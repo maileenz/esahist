@@ -50,11 +50,17 @@ export const dynamic = "force-dynamic";
  * Only pages that render something to a signed-out visitor belong here. Listing
  * a page that answers with a redirect to `/login` is not a neutral act: it
  * spends crawl budget and teaches the crawler that this site's URLs do not mean
- * what they say. That is why the lobby, profiles and games are absent: they are
- * still behind a session check.
+ * what they say.
  *
- * The leaderboard is the exception, and it is the reason this file is worth
- * having — four pages that change every day and are worth finding.
+ * What that admits today: the home page, sign-in, the privacy policy, the
+ * leaderboard overview and one page per rating pool, up to `PROFILE_LIMIT`
+ * member profiles and up to `GAME_LIMIT` finished games. What it excludes, and
+ * why: the friends inbox, settings and the moderation queue, because they
+ * redirect; games still in progress and suspended accounts, because both carry
+ * `noindex` and a sitemap that contradicts the page is an error Search Console
+ * reports back.
+ *
+ * Each block below says what its own frequency and priority mean.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 	if (!isIndexableDeployment()) return [];

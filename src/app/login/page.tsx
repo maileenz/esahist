@@ -94,7 +94,14 @@ export default async function LoginPage({
 		<main className="flex min-h-[85vh] items-center justify-center p-6">
 			<JsonLd data={siteStructuredData(common("metaDescription"), locale)} />
 			<div className="flex w-full max-w-sm flex-col rounded-2xl border border-line bg-surface p-8 text-center shadow-sm">
-				<Brand className="mb-2 self-center text-xl" />
+				{/* The page's heading, not decoration. This is the one route the site
+				    holds out as its crawler-facing landing page, and a document with no
+				    h1 is both a Lighthouse SEO failure and the thing a screen-reader
+				    user presses `H` to find. `self-center` sits here rather than on the
+				    wordmark because the card is a flex column. */}
+				<h1 className="self-center">
+					<Brand className="mb-2 text-xl" />
+				</h1>
 				<p className="mt-1 text-muted-foreground text-sm">{t("tagline")}</p>
 
 				{error && (

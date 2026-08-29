@@ -146,8 +146,16 @@ export const memberRouter = createTRPCRouter({
 					),
 				);
 
+			// `id` is selected because the queries above and below join on it, and
+			// dropped before the row leaves the server. It is an internal key on a
+			// procedure anyone can call, and the rule at the top of this router is
+			// that a column returned here is a column published. Everything that
+			// needs it — the pools query, and the view counter in the layout —
+			// works from the username or from this closure instead.
+			const { id: _internalId, ...published } = member;
+
 			return {
-				...member,
+				...published,
 				banned: member.bannedAt !== null,
 				/** Games that reached an end, whether they were rated or not. */
 				finishedGames: Number(played?.total ?? 0),

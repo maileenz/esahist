@@ -26,7 +26,7 @@ import { auth, signOut } from "@/server/auth";
 export default async function SiteSidebar() {
 	const session = await auth();
 	const t = await getTranslations("nav");
-	const privacy = await getTranslations("privacy");
+	const privacyPolicy = await getTranslations("privacyPolicy");
 	const user = session?.user;
 
 	/*
@@ -98,6 +98,13 @@ export default async function SiteSidebar() {
 				<AppearanceButton className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 font-semibold text-muted-foreground text-sm transition hover:bg-elevated hover:text-fg" />
 
 				{/*
+				 * Labelled from `privacyPolicy.navLabel` — a short form of the
+				 * document's own title, kept in the document's own namespace. It used
+				 * to borrow `privacy.title`, which belongs to the Settings > Privacy
+				 * screen: the rail then read "Privacy" while the page it opened was
+				 * headed "Privacy policy", and renaming that settings tab would have
+				 * silently retitled this link.
+				 *
 				 * The one permanent way to the policy. The consent bar links to it too,
 				 * but that bar is gone the moment it is answered, and the settings page
 				 * behind it needs an account — so without this a signed-out reader who
@@ -107,7 +114,7 @@ export default async function SiteSidebar() {
 					className="rounded-lg px-3 py-1.5 text-subtle text-xs transition hover:bg-elevated hover:text-fg"
 					href="/privacy-policy"
 				>
-					{privacy("title")}
+					{privacyPolicy("navLabel")}
 				</Link>
 
 				{user?.username ? (

@@ -77,11 +77,21 @@ export default async function PrivacyPolicyPage() {
 	const t = await getTranslations("privacyPolicy");
 	const locale = await getLocale();
 
-	// The reader's own date order, the same way finished games are dated.
+	/*
+	 * The reader's own date order, the same way finished games are dated — but
+	 * pinned to UTC, unlike them.
+	 *
+	 * A date-only ISO string parses as UTC midnight, and formatting it in the
+	 * server's zone would render the day before anywhere west of UTC. A finished
+	 * game is a real instant and should be shown in local terms; this is a
+	 * calendar day written in the source, and it has to read back as the day it
+	 * was written.
+	 */
 	const updated = new Date(UPDATED).toLocaleDateString(locale, {
 		day: "numeric",
 		month: "long",
 		year: "numeric",
+		timeZone: "UTC",
 	});
 
 	return (

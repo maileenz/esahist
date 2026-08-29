@@ -129,7 +129,7 @@ export default async function MemberLayout({
 	 */
 	const prefetch = (await headers()).get("next-router-prefetch") === "1";
 	if (signedIn && !isSelf && !prefetch) {
-		after(() => recordProfileView(member.id));
+		after(() => recordProfileView(member.username));
 	}
 
 	return (
