@@ -50,6 +50,8 @@ export default function BoardSettings({
 	initial: { boardTheme: string; pieceSet: string };
 }) {
 	const t = useTranslations("board");
+	const themes = useTranslations("board.themes");
+	const sets = useTranslations("board.pieceSets");
 	const common = useTranslations("common");
 	const [tab, setTab] = useState<Tab>("boards");
 	const [saved, setSaved] = useState(initial);
@@ -92,7 +94,7 @@ export default function BoardSettings({
 							<Swatches
 								items={BOARD_THEMES.map((theme) => ({
 									id: theme.id,
-									label: theme.label,
+									label: themes(theme.id),
 									preview: <MiniBoard dark={theme.dark} light={theme.light} />,
 								}))}
 								onPick={(id) => apply({ boardTheme: id })}
@@ -104,7 +106,7 @@ export default function BoardSettings({
 							<Swatches
 								items={PIECE_SETS.map((set) => ({
 									id: set.id,
-									label: set.label,
+									label: sets(set.id),
 									preview: <MiniPieces set={set.id} />,
 								}))}
 								onPick={(id) => apply({ pieceSet: id })}
@@ -233,6 +235,8 @@ function MiniPieces({ set }: { set: string }) {
 function Preview() {
 	const boardStyles = useBoardStyles();
 	const { boardTheme, pieceSet } = useBoard();
+	const themes = useTranslations("board.themes");
+	const sets = useTranslations("board.pieceSets");
 
 	return (
 		// `self-start` and the square box are both load-bearing: the board is a
@@ -256,8 +260,8 @@ function Preview() {
 			</div>
 
 			<p className="mt-2 text-center text-subtle text-xs">
-				{resolveBoardTheme(boardTheme).label} ·{" "}
-				{resolvePieceSet(pieceSet).label}
+				{themes(resolveBoardTheme(boardTheme).id)} ·{" "}
+				{sets(resolvePieceSet(pieceSet).id)}
 			</p>
 		</div>
 	);

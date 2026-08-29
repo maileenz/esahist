@@ -3,12 +3,19 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import ReportQueue from "@/components/admin/report-queue";
+import { canonical, NOINDEX } from "@/lib/seo";
 import { auth } from "@/server/auth";
 import { api, HydrateClient } from "@/trpc/server";
 
 export async function generateMetadata(): Promise<Metadata> {
 	const t = await getTranslations("admin");
-	return { title: t("metaTitle") };
+	return {
+		title: t("metaTitle"),
+		alternates: canonical("/admin"),
+		// The route already 404s for everyone but moderators; this keeps the
+		// address itself out of an index rather than relying on that.
+		robots: NOINDEX,
+	};
 }
 
 const STATUSES = ["open", "reviewed", "dismissed"] as const;

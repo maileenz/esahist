@@ -5,7 +5,7 @@ import { AuthError } from "next-auth";
 
 import { signIn } from "@/server/auth";
 
-export type OAuthProvider = "discord" | "github";
+export type OAuthProvider = "discord" | "facebook" | "github";
 
 /**
  * Bound per provider by the login page. `callbackUrl` is sanitised there and

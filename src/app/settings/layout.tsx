@@ -4,11 +4,18 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import SettingsNav from "@/components/settings/settings-nav";
+import { canonical, NOINDEX } from "@/lib/seo";
 import { auth } from "@/server/auth";
 
 export async function generateMetadata(): Promise<Metadata> {
 	const t = await getTranslations("settingsNav");
-	return { title: `${t("title")} · Esahist.ro` };
+	return {
+		title: t("title"),
+		alternates: canonical("/settings"),
+		// Inherited by every section under here, which is the point — an account's
+		// own settings are the last thing that belongs in an index.
+		robots: NOINDEX,
+	};
 }
 
 /**

@@ -56,13 +56,13 @@ export default function StandingsTable({
 							<TableHead>{t("player")}</TableHead>
 							<TableHead className="w-16 text-right">{t("rating")}</TableHead>
 							<TableHead className="hidden w-12 text-right sm:table-cell">
-								Won
+								{t("won")}
 							</TableHead>
 							<TableHead className="hidden w-12 text-right sm:table-cell">
-								Draw
+								{t("draw")}
 							</TableHead>
 							<TableHead className="hidden w-12 text-right sm:table-cell">
-								Lost
+								{t("lost")}
 							</TableHead>
 						</TableRow>
 					</TableHeader>
@@ -78,7 +78,10 @@ export default function StandingsTable({
 								</TableCell>
 								<TableCell
 									className="text-right font-bold text-fg tabular-nums"
-									title={`± ${Math.round(row.deviation)} over ${row.gamesPlayed} rated ${row.gamesPlayed === 1 ? "game" : "games"}`}
+									title={t("deviation", {
+										deviation: Math.round(row.deviation),
+										games: row.gamesPlayed,
+									})}
 								>
 									{row.rating}
 								</TableCell>

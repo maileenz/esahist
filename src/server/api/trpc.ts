@@ -102,6 +102,23 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 });
 
 /**
+ * Public (unauthenticated) procedure
+ *
+ * The base piece for anything a signed-out visitor may read. It runs the same
+ * timing middleware as the rest and guarantees nothing about `ctx.session`,
+ * which may be null — narrow it before use.
+ *
+ * Reach for this sparingly and deliberately. A procedure moved here is a
+ * procedure anyone on the internet can call at any rate, so what it returns is
+ * published: no email addresses, no internal ids, nothing a member has not
+ * chosen to show. The leaderboard qualifies because a public ranking is the
+ * point of a ranking.
+ *
+ * @see https://trpc.io/docs/procedures
+ */
+export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
  * Protected (authenticated) procedure
  *
  * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies

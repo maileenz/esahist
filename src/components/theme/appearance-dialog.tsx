@@ -34,6 +34,7 @@ const SYSTEM = "system";
  */
 export function AppearanceButton({ className }: { className?: string }) {
 	const t = useTranslations("appearance");
+	const themes = useTranslations("appearance.themes");
 	const nav = useTranslations("nav");
 	const { theme, setTheme } = useTheme();
 	const mounted = useMounted();
@@ -134,7 +135,7 @@ export function AppearanceButton({ className }: { className?: string }) {
 										style={{ backgroundColor: entry.swatch[1] }}
 									/>
 								</span>
-								{entry.label}
+								{themes(entry.id)}
 							</OptionCard>
 						))}
 					</div>

@@ -10,19 +10,35 @@ export type GameStatus = "waiting" | "playing" | "finished";
 /** Standard PGN result token. */
 export type GameResult = "1-0" | "0-1" | "1/2-1/2" | "*";
 
-export type EndReason =
-	| "checkmate"
-	| "stalemate"
-	| "insufficient_material"
-	| "threefold_repetition"
-	| "fifty_move_rule"
-	| "timeout"
-	| "timeout_vs_insufficient_material"
-	| "resignation"
-	| "agreement"
-	| "abandonment"
-	| "aborted"
-	| "server_shutdown";
+/**
+ * An array rather than a bare union, so the same twelve values can be checked
+ * at run time. A finished game's reason comes back out of the database as a
+ * plain `varchar`, and anything rendering it needs to know whether the string
+ * still names a reason before using it as a message key.
+ */
+export const END_REASONS = [
+	"checkmate",
+	"stalemate",
+	"insufficient_material",
+	"threefold_repetition",
+	"fifty_move_rule",
+	"timeout",
+	"timeout_vs_insufficient_material",
+	"resignation",
+	"agreement",
+	"abandonment",
+	"aborted",
+	"server_shutdown",
+] as const;
+
+export type EndReason = (typeof END_REASONS)[number];
+
+export function isEndReason(value: unknown): value is EndReason {
+	return (
+		typeof value === "string" &&
+		(END_REASONS as readonly string[]).includes(value)
+	);
+}
 
 /** Messages the client sends to the room. */
 export const ClientMessage = {

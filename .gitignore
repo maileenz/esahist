@@ -50,3 +50,7 @@ yarn-error.log*
 
 # claude code — the local overrides only, never the shared project settings
 .claude/settings.local.json
+# ...and any worktree checked out inside the repo. `EnterWorktree` puts a full
+# second copy of the tree here; committing it would put the repository inside
+# itself.
+.claude/worktrees/

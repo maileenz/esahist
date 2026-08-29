@@ -18,6 +18,7 @@ import { PlayerBar } from "@/components/player-bar";
 import { Button } from "@/components/ui/button";
 import { STARTING_FEN, useBoardStyles } from "@/hooks/use-board-styles";
 import { capturedFrom } from "@/lib/captured";
+import { isEndReason } from "@/lib/protocol";
 import type { RouterOutputs } from "@/trpc/react";
 
 type Game = NonNullable<RouterOutputs["member"]["game"]>;
@@ -148,7 +149,12 @@ export default function GameReplay({ game }: { game: Game }) {
 							<p className="font-semibold text-fg">{headline}</p>
 							<p className="text-muted-foreground text-sm">
 								{game.result ?? "*"}
-								{game.reason ? ` — ${game.reason.replace(/_/g, " ")}` : ""}
+								{/* Through the catalogue, not by tidying the raw key: replacing
+								    the underscores rendered "insufficient material" in every
+								    language, including the ones being read in Romanian. */}
+								{isEndReason(game.reason)
+									? ` — ${gameT(`reasons.${game.reason}`)}`
+									: ""}
 							</p>
 							<p className="mt-1 text-subtle text-xs">
 								{game.timeControl} ·{" "}

@@ -31,7 +31,7 @@ export function requireStripe(): Stripe {
 		// an upgrade arrive with a library bump is how a webhook payload changes
 		// shape without anybody deciding it should.
 		apiVersion: "2026-07-29.dahlia",
-		appInfo: { name: "Grand Master", url: "https://github.com" },
+		appInfo: { name: "Esahist.ro", url: "https://esahist.ro" },
 	});
 
 	return client;

@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, ChevronsUpDown } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import Flag from "@/components/flag";
@@ -19,14 +19,25 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import type { AppLocale } from "@/i18n/locales";
 import { countryName, countryOptions } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 
 /**
- * Sorted once per page load rather than per render: `countryOptions()` puts 249
- * names through `localeCompare`, and the answer never changes.
+ * Sorted once per locale rather than per render: `countryOptions()` puts 249
+ * names through `localeCompare`, and the answer only changes when the language
+ * does — which, since the order is by translated name, it genuinely has to.
  */
-const ALL = countryOptions();
+const sorted = new Map<AppLocale, { code: string; name: string }[]>();
+
+function allCountries(locale: AppLocale) {
+	const cached = sorted.get(locale);
+	if (cached) return cached;
+
+	const options = countryOptions(locale);
+	sorted.set(locale, options);
+	return options;
+}
 
 /**
  * Pick a country.
@@ -71,13 +82,15 @@ export default function CountrySelect({
 	className?: string;
 }) {
 	const t = useTranslations("ui");
+	const locale = useLocale();
 	const [open, setOpen] = useState(false);
 
 	const options = useMemo(() => {
-		if (!codes) return ALL;
+		const all = allCountries(locale);
+		if (!codes) return all;
 		const allowed = new Set(codes);
-		return ALL.filter((option) => allowed.has(option.code));
-	}, [codes]);
+		return all.filter((option) => allowed.has(option.code));
+	}, [codes, locale]);
 
 	const choose = (next: string) => {
 		onChange(next);
@@ -100,7 +113,7 @@ export default function CountrySelect({
 						{value ? (
 							<>
 								<Flag className="shrink-0 rounded-xs" code={value} />
-								<span className="truncate">{countryName(value)}</span>
+								<span className="truncate">{countryName(value, locale)}</span>
 							</>
 						) : (
 							<span className="flex items-center gap-2 text-muted-foreground">

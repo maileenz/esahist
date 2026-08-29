@@ -1,15 +1,31 @@
 import { Trophy } from "lucide-react";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import Filters from "@/components/leaderboard/filters";
-import { auth } from "@/server/auth";
+import { canonical, openGraphFor, twitterFor } from "@/lib/seo";
 import { api } from "@/trpc/server";
 
 export async function generateMetadata(): Promise<Metadata> {
 	const t = await getTranslations("leaderboard");
-	return { title: t("metaTitle") };
+	const locale = await getLocale();
+	const title = t("metaTitle");
+	const description = t("metaDescription");
+
+	return {
+		title,
+		description,
+		// `?country=` filters the same table rather than making a new page, so the
+		// bare path is the address of all of them.
+		alternates: canonical("/leaderboard"),
+		openGraph: openGraphFor({
+			description,
+			locale,
+			title,
+			url: "/leaderboard",
+		}),
+		twitter: twitterFor({ description, title }),
+	};
 }
 
 /**
@@ -23,9 +39,11 @@ export default async function LeaderboardLayout({
 	children: React.ReactNode;
 }) {
 	const t = await getTranslations("leaderboard");
-	const session = await auth();
-	if (!session?.user) redirect("/login?callbackUrl=%2Fleaderboard");
 
+	// No sign-in gate: this is the one part of the site a stranger is meant to
+	// be able to read, and the procedures behind it are public to match. The rail
+	// is drawn by the root layout either way, so there is no chrome to decide on
+	// here any more.
 	const countries = await api.leaderboard.countries();
 
 	return (

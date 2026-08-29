@@ -5,12 +5,19 @@ import { getTranslations } from "next-intl/server";
 
 import FriendsList from "@/components/friends/friends-list";
 import PendingRequests from "@/components/friends/pending-requests";
+import { canonical, NOINDEX } from "@/lib/seo";
 import { auth } from "@/server/auth";
 import { api, HydrateClient } from "@/trpc/server";
 
 export async function generateMetadata(): Promise<Metadata> {
 	const t = await getTranslations("friends");
-	return { title: `${t("title")} · Esahist.ro` };
+	return {
+		title: t("title"),
+		alternates: canonical("/friends"),
+		// Your inbox. There is nothing here for anyone who is not you, and a
+		// crawler that follows a link to it is served the login page.
+		robots: NOINDEX,
+	};
 }
 
 /**

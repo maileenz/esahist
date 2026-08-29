@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 import { flairById } from "@/lib/flairs";
 import { cn } from "@/lib/utils";
 
@@ -22,15 +24,20 @@ export default function Flair({
 	id: string | null | undefined;
 	className?: string;
 }) {
+	// Above the early return: a hook cannot be called conditionally.
+	const names = useTranslations("flairs");
+
 	const flair = flairById(id);
 	if (!flair) return null;
 
+	const name = names(flair.id);
+
 	return (
 		<span
-			aria-label={flair.name}
+			aria-label={name}
 			className={cn("shrink-0 text-sm leading-none", className)}
 			role="img"
-			title={flair.name}
+			title={name}
 		>
 			{flair.emoji}
 		</span>

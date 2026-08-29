@@ -8,7 +8,7 @@ import {
 	TIME_CONTROL_CATEGORIES,
 	type TimeControlCategory,
 } from "@/lib/timeControls";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { poolsFor } from "@/server/db/ratings";
 import { DEFAULT_RATING, games, gamesHistory, users } from "@/server/db/schema";
 
@@ -88,8 +88,24 @@ function seriesFor(
  * Public-facing member data. Everything here is readable by any signed-in user,
  * so it must never select `email` or anything else the owner alone should see.
  */
+/**
+ * Everything a profile page is made of — and all of it public.
+ *
+ * A member's identity, their ratings, their game archive and any one game are
+ * the pages this site is found by, so every procedure here answers an
+ * unauthenticated caller. Two rules follow from that, and they are the reason
+ * this note exists:
+ *
+ * Nothing internal goes in a projection. No email, no `users.id` — the game
+ * query joins on ids and selects usernames, and `games` drops the id it needed
+ * for the join before returning. A column added here is a column published.
+ *
+ * Nothing may depend on there being a viewer. `ctx.session` is optional in this
+ * file; `games` reads it only to mark which rows the reader played in, and
+ * falls back to none.
+ */
 export const memberRouter = createTRPCRouter({
-	profile: protectedProcedure
+	profile: publicProcedure
 		.input(z.object({ username: z.string().min(1).max(32) }))
 		.query(async ({ ctx, input }) => {
 			const [member] = await ctx.db
@@ -150,7 +166,7 @@ export const memberRouter = createTRPCRouter({
 	 * not unique enough to break a tie between two games that began in the same
 	 * second.
 	 */
-	games: protectedProcedure
+	games: publicProcedure
 		.input(
 			z.object({
 				username: z.string().min(1).max(32),
@@ -237,14 +253,19 @@ export const memberRouter = createTRPCRouter({
 						: null,
 				items: page.map((row) => {
 					const color = row.whiteUserId === member.id ? "w" : "b";
-					const viewer = ctx.session.user.id;
+					// Optional now that this is public: a signed-out reader is nobody, so
+					// no game is theirs. `?? null` rather than a bare access — the
+					// session is genuinely absent here, not merely unnarrowed.
+					const viewer = ctx.session?.user?.id ?? null;
 
 					return {
 						id: row.id,
 						/** The profile owner's side — what `delta` and `outcome` are read from. */
 						perspective: color as "w" | "b" | null,
 						/** Whose games these are to *look* at is not whose they are to save. */
-						mine: row.whiteUserId === viewer || row.blackUserId === viewer,
+						mine:
+							viewer !== null &&
+							(row.whiteUserId === viewer || row.blackUserId === viewer),
 						white: {
 							username: row.whiteUsername,
 							rating: row.whiteRatingBefore,
@@ -282,7 +303,7 @@ export const memberRouter = createTRPCRouter({
 	 * played at is already on the row — a separate history table would be a
 	 * second copy of the same truth, free to drift.
 	 */
-	ratingHistory: protectedProcedure
+	ratingHistory: publicProcedure
 		.input(z.object({ username: z.string().min(1).max(32) }))
 		.query(async ({ ctx, input }) => {
 			const today = midnight();
@@ -355,7 +376,7 @@ export const memberRouter = createTRPCRouter({
 			return build(played);
 		}),
 
-	game: protectedProcedure
+	game: publicProcedure
 		.input(z.object({ id: z.string().min(1).max(36) }))
 		.query(async ({ ctx, input }) => {
 			const white = alias(users, "white_user");

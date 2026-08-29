@@ -5,35 +5,52 @@
  */
 
 export interface ReportGroup {
-	label: string;
-	reasons: { id: string; label: string }[];
+	id: ReportGroupId;
+	reasons: { id: ReportReasonId }[];
 }
+
+/**
+ * Ids only. What each one is called is prose, and prose lives in the message
+ * catalogues under `report.groups` and `report.reasons` — typing the ids as a
+ * union is what lets a caller pass one straight to `t()`, and what makes a
+ * reason added here without a name a compile error.
+ */
+export type ReportGroupId = "abuse" | "fairPlay" | "other";
+
+export type ReportReasonId =
+	| "verbal_abuse"
+	| "racism"
+	| "violence"
+	| "sexual_harassment"
+	| "cheating"
+	| "stalling"
+	| "sandbagging"
+	| "avatar"
+	| "username"
+	| "spamming"
+	| "other";
 
 export const REPORT_GROUPS: ReportGroup[] = [
 	{
-		label: "Abuse",
+		id: "abuse",
 		reasons: [
-			{ id: "verbal_abuse", label: "Verbal Abuse / Cursing / Trolling" },
-			{ id: "racism", label: "Racism" },
-			{ id: "violence", label: "Violence / Threats" },
-			{ id: "sexual_harassment", label: "Sexual Harassment" },
+			{ id: "verbal_abuse" },
+			{ id: "racism" },
+			{ id: "violence" },
+			{ id: "sexual_harassment" },
 		],
 	},
 	{
-		label: "Fair Play",
-		reasons: [
-			{ id: "cheating", label: "Cheating" },
-			{ id: "stalling", label: "Stalling / Quitting Games" },
-			{ id: "sandbagging", label: "Sandbagging (Rating Manipulation)" },
-		],
+		id: "fairPlay",
+		reasons: [{ id: "cheating" }, { id: "stalling" }, { id: "sandbagging" }],
 	},
 	{
-		label: "Other",
+		id: "other",
 		reasons: [
-			{ id: "avatar", label: "Avatar" },
-			{ id: "username", label: "Username" },
-			{ id: "spamming", label: "Spamming" },
-			{ id: "other", label: "Other" },
+			{ id: "avatar" },
+			{ id: "username" },
+			{ id: "spamming" },
+			{ id: "other" },
 		],
 	},
 ];
@@ -42,10 +59,9 @@ export const REPORT_REASONS = REPORT_GROUPS.flatMap((group) =>
 	group.reasons.map((reason) => reason.id),
 ) as [string, ...string[]];
 
-export function reportReasonLabel(id: string): string {
-	for (const group of REPORT_GROUPS) {
-		const found = group.reasons.find((reason) => reason.id === id);
-		if (found) return found.label;
-	}
-	return id;
+const REASON_IDS: ReadonlySet<string> = new Set(REPORT_REASONS);
+
+/** Whether a stored value still names a reason this catalogue offers. */
+export function isReportReason(value: unknown): value is ReportReasonId {
+	return typeof value === "string" && REASON_IDS.has(value);
 }

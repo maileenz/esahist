@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl";
 import { CATEGORY_ICONS } from "@/components/category-icon";
 import CountrySelect from "@/components/country-select";
 import { toCountryCode } from "@/lib/countries";
-import { CATEGORY_META, TIME_CONTROL_CATEGORIES } from "@/lib/timeControls";
+import { TIME_CONTROL_CATEGORIES } from "@/lib/timeControls";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
  */
 export default function Filters({ countries }: { countries: string[] }) {
 	const t = useTranslations("leaderboard");
+	const categories = useTranslations("categories");
 	const pathname = usePathname();
 	const params = useSearchParams();
 	const router = useRouter();
@@ -34,7 +35,7 @@ export default function Filters({ countries }: { countries: string[] }) {
 		{ href: "/leaderboard", label: t("allGameTypes"), Icon: LayoutGrid },
 		...TIME_CONTROL_CATEGORIES.map((category) => ({
 			href: `/leaderboard/${category}`,
-			label: CATEGORY_META[category].label,
+			label: categories(category),
 			Icon: CATEGORY_ICONS[category],
 		})),
 	];

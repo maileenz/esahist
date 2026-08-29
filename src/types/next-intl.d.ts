@@ -1,5 +1,5 @@
-import type messages from "../../messages/en.json";
 import type { AppLocale } from "@/i18n/locales";
+import type messages from "../../messages/en.json";
 
 /**
  * Makes the catalogue part of the type system.

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { reportReasonLabel } from "@/lib/reportReasons";
+import { isReportReason } from "@/lib/reportReasons";
 import { confirmDestructive } from "@/lib/sweet-alert";
 
 import { api } from "@/trpc/react";
@@ -21,6 +21,7 @@ export default function ReportQueue({
 	page: number;
 }) {
 	const t = useTranslations("admin");
+	const reasons = useTranslations("report.reasons");
 	const [data] = api.admin.reports.useSuspenseQuery({ status, page });
 
 	const utils = api.useUtils();
@@ -84,7 +85,9 @@ export default function ReportQueue({
 										)}
 									</p>
 									<p className="mt-1 font-medium text-danger text-sm">
-										{reportReasonLabel(report.reason)}
+										{isReportReason(report.reason)
+											? reasons(report.reason)
+											: report.reason}
 									</p>
 									<p className="mt-1 text-muted-foreground text-xs">
 										reported by{" "}
@@ -137,8 +140,8 @@ export default function ReportQueue({
 												report.reportedName ?? report.reportedUsername;
 											const confirmed = await confirmDestructive({
 												title: banning
-													? `Suspend ${name}?`
-													: `Lift the suspension on ${name}?`,
+													? t("suspendTitleNamed", { name })
+													: t("liftTitleNamed", { name }),
 												text: banning ? t("suspendText") : t("liftText"),
 												confirmText: banning
 													? t("suspend")

@@ -54,6 +54,7 @@ function scoreFor(result: string | null, color: "w" | "b"): string {
  */
 export default function GameListItem({ game }: { game: GameListRow }) {
 	const lobby = useTranslations("lobby");
+	const categories = useTranslations("categories");
 	const control = resolveTimeControl(game.timeControl);
 	const category = CATEGORY_META[control.category];
 
@@ -66,7 +67,7 @@ export default function GameListItem({ game }: { game: GameListRow }) {
 				>
 					<span
 						className="flex w-12 shrink-0 flex-col items-center gap-y-1 text-center"
-						title={`${category.label} · ${game.ranked ? lobby("rated") : lobby("casual")}`}
+						title={`${categories(control.category)} · ${game.ranked ? lobby("rated") : lobby("casual")}`}
 					>
 						<span aria-hidden className="text-lg leading-none">
 							{category.icon}

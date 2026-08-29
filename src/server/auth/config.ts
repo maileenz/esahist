@@ -1,6 +1,7 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import type { DefaultSession, NextAuthConfig } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
 
 import { db } from "@/server/db";
@@ -47,13 +48,15 @@ const cookieDomain = process.env.AUTH_COOKIE_DOMAIN;
  */
 const discord = DiscordProvider({});
 const github = GitHubProvider({});
+const facebook = FacebookProvider({});
 
 const discordProfile = discord.profile;
 const githubProfile = github.profile;
+const facebookProfile = facebook.profile;
 
-// Optional on the type for custom providers; both built-ins always set it.
-if (!discordProfile || !githubProfile) {
-	throw new Error("Expected the Discord and GitHub providers to map profiles");
+// Optional on the type for custom providers; all three built-ins always set it.
+if (!discordProfile || !githubProfile || !facebookProfile) {
+	throw new Error("Expected the built-in providers to map profiles");
 }
 
 /**
@@ -93,6 +96,29 @@ export const authConfig = {
 				};
 			},
 		},
+		/*
+		 * Facebook. Required like the other two, so it is always registered.
+		 *
+		 * Its profile carries no handle of its own: Discord has `username` and
+		 * GitHub has `login`, but Facebook returns a display name, so that is what
+		 * the slug is built from. `slugifyUsername` turns "Ana Popescu" into
+		 * `ana-popescu`, and `uniqueUsername` is what keeps the second one from
+		 * colliding with the first.
+		 */
+		{
+			...facebook,
+			profile: async (...args: Parameters<typeof facebookProfile>) => {
+				const user = await facebookProfile(...args);
+				return {
+					...user,
+					username: await uniqueUsername(user.name ?? user.email ?? "player"),
+					// Facebook's default field set carries no locale or country,
+					// so only the request hint is used.
+					country: await guessCountry(null),
+				};
+			},
+		},
+
 		/**
 		 * ...add more providers here. Each one needs its `AUTH_<PROVIDER>_ID` and
 		 * `AUTH_<PROVIDER>_SECRET` in `.env` — Auth.js v5 picks them up by name —

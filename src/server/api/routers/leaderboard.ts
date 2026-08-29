@@ -7,7 +7,7 @@ import {
 	TIME_CONTROLS,
 	type TimeControlCategory,
 } from "@/lib/timeControls";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { games, userRatings, users } from "@/server/db/schema";
 
 /** How many each pool shows on the index, before "See all". */
@@ -39,10 +39,17 @@ function clocksIn(category: TimeControlCategory): string[] {
  * Ranked on `user_rating`, which only has a row once somebody has played the
  * pool — so a leaderboard is exactly the people who have earned a place on it,
  * with no provisional 1500s padding the bottom.
+ *
+ * Public, unlike the rest of the API. A ranking that only its own members can
+ * see is not a ranking, and these are the pages the site is found by. What that
+ * costs is that every field returned here is published to anyone who asks: the
+ * columns are the handle, flag, flair, rating and record a member already shows
+ * on their own profile, and nothing else. Adding a column here is publishing
+ * it.
  */
 export const leaderboardRouter = createTRPCRouter({
 	/** The top few in every pool, for the index. */
-	overview: protectedProcedure
+	overview: publicProcedure
 		.input(z.object({ country: countryInput }).optional())
 		.query(async ({ ctx, input }) => {
 			// One query, ranked within each pool by a window function, rather than
@@ -108,7 +115,7 @@ export const leaderboardRouter = createTRPCRouter({
 	 * ISO list: a picker of two hundred countries where all but four are empty
 	 * is a worse control than a short one that is true.
 	 */
-	countries: protectedProcedure.query(async ({ ctx }) => {
+	countries: publicProcedure.query(async ({ ctx }) => {
 		const rows = await ctx.db
 			.selectDistinct({ code: users.country })
 			.from(users)
@@ -129,7 +136,7 @@ export const leaderboardRouter = createTRPCRouter({
 	 * row is its offset, and a standing that shifts under a reader is the table
 	 * doing its job rather than a bug to design around.
 	 */
-	standings: protectedProcedure
+	standings: publicProcedure
 		.input(
 			z.object({
 				category: categoryInput,
@@ -176,10 +183,14 @@ export const leaderboardRouter = createTRPCRouter({
 			);
 
 			return {
-				items: rows.map((row, index) => ({
+				// `id` is selected because `recordsFor` needs it to join, and dropped
+				// before the row leaves the server: it is an internal key, the client
+				// keys its rows on the handle, and this is now an endpoint anyone can
+				// call. Nothing that is not on the page goes over the wire.
+				items: rows.map(({ id, ...row }, index) => ({
 					...row,
 					place: offset + index + 1,
-					record: records.get(row.id) ?? { wins: 0, draws: 0, losses: 0 },
+					record: records.get(id) ?? { wins: 0, draws: 0, losses: 0 },
 				})),
 				nextCursor:
 					page.length > input.limit ? offset + input.limit : (null as null),

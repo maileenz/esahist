@@ -49,7 +49,7 @@ export async function stripeCustomerFor(userId: string): Promise<string> {
 		// The binding, written on Stripe's side too: a customer in the dashboard
 		// can always be traced back to an account here, which is what makes a
 		// support question answerable.
-		metadata: { userId, username: member.username },
+		metadata: { userId },
 	});
 
 	// `IS NULL` in the predicate is the lock: two tabs opening checkout at once
@@ -96,24 +96,24 @@ export async function syncStripeData(
 	const subscription = subscriptions.data[0];
 	const snapshot: SubscriptionSnapshot = subscription
 		? {
-				subscriptionId: subscription.id,
-				status: subscription.status,
-				priceId: subscription.items.data[0]?.price.id ?? null,
-				currentPeriodStart: periodStart(subscription),
-				currentPeriodEnd: periodEnd(subscription),
-				cancelAtPeriodEnd: subscription.cancel_at_period_end,
-				...card(subscription.default_payment_method),
-			}
+			subscriptionId: subscription.id,
+			status: subscription.status,
+			priceId: subscription.items.data[0]?.price.id ?? null,
+			currentPeriodStart: periodStart(subscription),
+			currentPeriodEnd: periodEnd(subscription),
+			cancelAtPeriodEnd: subscription.cancel_at_period_end,
+			...card(subscription.default_payment_method),
+		}
 		: {
-				subscriptionId: null,
-				status: "none",
-				priceId: null,
-				currentPeriodStart: null,
-				currentPeriodEnd: null,
-				cancelAtPeriodEnd: false,
-				paymentBrand: null,
-				paymentLast4: null,
-			};
+			subscriptionId: null,
+			status: "none",
+			priceId: null,
+			currentPeriodStart: null,
+			currentPeriodEnd: null,
+			cancelAtPeriodEnd: false,
+			paymentBrand: null,
+			paymentLast4: null,
+		};
 
 	const userId = await userIdFor(stripeCustomerId);
 
@@ -214,8 +214,8 @@ function periodStart(subscription: Stripe.Subscription): Date | null {
 	const item = subscription.items.data[0];
 	return seconds(
 		item?.current_period_start ??
-			(subscription as unknown as { current_period_start?: number })
-				.current_period_start,
+		(subscription as unknown as { current_period_start?: number })
+			.current_period_start,
 	);
 }
 
@@ -223,8 +223,8 @@ function periodEnd(subscription: Stripe.Subscription): Date | null {
 	const item = subscription.items.data[0];
 	return seconds(
 		item?.current_period_end ??
-			(subscription as unknown as { current_period_end?: number })
-				.current_period_end,
+		(subscription as unknown as { current_period_end?: number })
+			.current_period_end,
 	);
 }
 

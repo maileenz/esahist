@@ -1,7 +1,8 @@
+import { useTranslations } from "next-intl";
+
 import { CATEGORY_ICONS } from "@/components/category-icon";
 import RatingSparkline from "@/components/member/rating-sparkline";
 import {
-	CATEGORY_META,
 	TIME_CONTROL_CATEGORIES,
 	type TimeControlCategory,
 } from "@/lib/timeControls";
@@ -63,6 +64,7 @@ function RatingCard({
 	pool: Pools[TimeControlCategory];
 	points: RatingHistory[TimeControlCategory];
 }) {
+	const categories = useTranslations("categories");
 	const Icon = CATEGORY_ICONS[category];
 	// Measured across the window the chart draws, so the arrow and the line
 	// agree about what "lately" means.
@@ -83,7 +85,7 @@ function RatingCard({
 				<div className="min-w-0">
 					<p className="flex items-center gap-1.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
 						<Icon aria-hidden className="h-3.5 w-3.5 shrink-0" />
-						{CATEGORY_META[category].label}
+						{categories(category)}
 					</p>
 					{/* Proportional figures, not tabular: these sit side by side rather
 					    than in a column, and equal-width digits only pay off when

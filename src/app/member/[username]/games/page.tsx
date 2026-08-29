@@ -9,8 +9,8 @@ export default async function MemberGamesPage({
 }) {
 	const { username } = await params;
 
-	// The layout has already resolved the member and redirected anyone signed
-	// out; lowercasing keeps the query key identical to the client's.
+	// The layout has already resolved the member and 404ed an unknown one;
+	// lowercasing keeps the query key identical to the client's.
 	const handle = decodeURIComponent(username).toLowerCase();
 
 	// Not awaited: the request fires here and the promise lands in the query

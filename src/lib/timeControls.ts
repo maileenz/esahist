@@ -156,13 +156,16 @@ export function isRatingCategory(value: unknown): value is TimeControlCategory {
 	);
 }
 
-export const CATEGORY_META: Record<
-	TimeControlCategory,
-	{ label: string; icon: string }
-> = {
-	bullet: { label: "Bullet", icon: "🚀" },
-	blitz: { label: "Blitz", icon: "⚡" },
-	rapid: { label: "Rapid", icon: "⏱️" },
+/**
+ * The glyph only. What a category is *called* is prose and lives in the message
+ * catalogue under `categories.*`, keyed by this same id. The clocks above keep
+ * their labels, because "5 + 3" and "30 sec" read the same in every language
+ * this site speaks.
+ */
+export const CATEGORY_META: Record<TimeControlCategory, { icon: string }> = {
+	bullet: { icon: "🚀" },
+	blitz: { icon: "⚡" },
+	rapid: { icon: "⏱️" },
 };
 
 /** Grouped for the New Game picker — one block per category, in playing order. */

@@ -2,7 +2,11 @@ import { TRPCError } from "@trpc/server";
 import { and, desc, eq, like, lt, or } from "drizzle-orm";
 import { z } from "zod";
 
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import {
+	createTRPCRouter,
+	protectedProcedure,
+	publicProcedure,
+} from "@/server/api/trpc";
 import type { db as database } from "@/server/db";
 import { friendships, userBlocks, users } from "@/server/db/schema";
 import { blockMember } from "@/server/social";
@@ -308,8 +312,13 @@ export const friendRouter = createTRPCRouter({
 	 * so a friendship accepted while someone is scrolling cannot shift the window
 	 * and make a row repeat or vanish, the way an offset would. `createdAt` is
 	 * the ordering key rather than `respondedAt` because it is never null.
+	 *
+	 * Public, because the Friends tab of a public profile is public. It reads a
+	 * named member's accepted friendships and nothing about whoever is asking —
+	 * every other procedure in this router is about the viewer's own
+	 * relationships, which is why they all stay protected.
 	 */
-	list: protectedProcedure
+	list: publicProcedure
 		.input(
 			usernameInput.extend({
 				/** Matches the display name or the username, case-insensitively. */

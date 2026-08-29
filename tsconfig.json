@@ -14,11 +14,7 @@
     "noUncheckedIndexedAccess": true,
     "checkJs": true,
     /* Bundled projects */
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "ES2022"
-    ],
+    "lib": ["dom", "dom.iterable", "ES2022"],
     "noEmit": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -30,14 +26,15 @@
     ],
     "incremental": true,
     /* Path Aliases */
-    "baseUrl": ".",
+    /* No `baseUrl`: it is deprecated and stops working in TypeScript 7, and
+       nothing here needs it. Since TypeScript 5.0 `paths` entries resolve
+       against the directory holding this file, which is what `./src/*` below
+       already assumes — `baseUrl` was only ever restating it. It would still be
+       required if anything imported by a bare path (`import "src/lib/x"`);
+       nothing does. */
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@/colyseus/*": [
-        "./src/server/colyseus/*"
-      ]
+      "@/*": ["./src/*"],
+      "@/colyseus/*": ["./src/server/colyseus/*"]
     }
   },
   "include": [

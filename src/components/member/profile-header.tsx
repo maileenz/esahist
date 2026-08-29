@@ -35,11 +35,15 @@ type Member = NonNullable<RouterOutputs["member"]["profile"]>;
 export default async function ProfileHeader({
 	member,
 	isSelf,
+	signedIn,
 }: {
 	member: Member;
 	isSelf: boolean;
+	/** False for a signed-out reader, who can look but not act. */
+	signedIn: boolean;
 }) {
 	const t = await getTranslations("profile");
+	const nav = await getTranslations("nav");
 	return (
 		<header className="@container p-5">
 			<div className="grid @min-[48em]:grid-cols-[10rem_1fr_auto] grid-cols-[5rem_1fr] @min-[48em]:grid-rows-[repeat(2,auto)] grid-rows-[repeat(3,auto)] gap-4 @min-[48em]:[grid-template-areas:'avatar_info_actions'_'avatar_details_details'] [grid-template-areas:'avatar_info'_'details_details'_'actions_actions']">
@@ -111,7 +115,7 @@ export default async function ProfileHeader({
 									{t("editProfile")}
 								</Link>
 							</Button>
-						) : (
+						) : signedIn ? (
 							<>
 								<HydrateClient>
 									<FriendButton username={member.username} />
@@ -123,6 +127,20 @@ export default async function ProfileHeader({
 									/>
 								</HydrateClient>
 							</>
+						) : (
+							/*
+							 * Befriending and reporting are both protected mutations, so to a
+							 * signed-out reader they are buttons that can only fail. What is
+							 * offered instead is the thing that would make them work — and it
+							 * comes back here afterwards.
+							 */
+							<Button asChild>
+								<Link
+									href={`/login?callbackUrl=${encodeURIComponent(`/member/${member.username}`)}`}
+								>
+									{nav("signIn")}
+								</Link>
+							</Button>
 						)}
 					</div>
 				</div>

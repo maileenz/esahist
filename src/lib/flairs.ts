@@ -11,19 +11,37 @@
 
 export type FlairGroupId = "chess" | "special" | "membership" | "emoji";
 
+/**
+ * Read back off the tables below, so the union cannot drift from the data.
+ *
+ * It also makes the ids usable as message keys: next-intl types `t()`, so a
+ * flair added here without a name in `messages/*.json` is a compile error
+ * rather than a tooltip that silently reads "flairs.dragon".
+ */
+export type FlairId =
+	| (typeof CHESS)[number][0]
+	| (typeof SPECIAL)[number][0]
+	| (typeof MEMBERSHIP)[number][0]
+	| (typeof EMOJI)[number][0];
+
 export type Flair = {
-	id: string;
+	id: FlairId;
 	emoji: string;
-	/** What the search box matches on, alongside the id. */
+	/**
+	 * The English name. Kept as the fallback and as what `searchFlairs` matches
+	 * when no translated names are handed to it — the catalogue under `flairs.*`
+	 * is what a reader actually sees.
+	 */
 	name: string;
 	group: FlairGroupId;
 };
 
-export const FLAIR_GROUPS: { id: FlairGroupId; label: string }[] = [
-	{ id: "chess", label: "Chess" },
-	{ id: "special", label: "Special Events" },
-	{ id: "membership", label: "Membership" },
-	{ id: "emoji", label: "Emoji" },
+// Names come from `profileSettings.flairGroups`, not from here.
+export const FLAIR_GROUPS: { id: FlairGroupId }[] = [
+	{ id: "chess" },
+	{ id: "special" },
+	{ id: "membership" },
+	{ id: "emoji" },
 ];
 
 /**
@@ -37,7 +55,7 @@ export const MEMBER_ONLY_GROUPS: ReadonlySet<FlairGroupId> = new Set([
 	"membership",
 ]);
 
-const CHESS: [string, string, string][] = [
+const CHESS = [
 	["pawn", "♟️", "Pawn"],
 	["knight", "♞", "Knight"],
 	["bishop", "♝", "Bishop"],
@@ -48,9 +66,9 @@ const CHESS: [string, string, string][] = [
 	["brain", "🧠", "Brain"],
 	["clock", "⏱️", "Clock"],
 	["handshake", "🤝", "Good game"],
-];
+] as const;
 
-const SPECIAL: [string, string, string][] = [
+const SPECIAL = [
 	["trophy", "🏆", "Champion"],
 	["medal", "🥇", "Gold medal"],
 	["fireworks", "🎆", "Fireworks"],
@@ -59,9 +77,9 @@ const SPECIAL: [string, string, string][] = [
 	["pumpkin", "🎃", "Halloween"],
 	["egg", "🥚", "Spring"],
 	["cake", "🎂", "Birthday"],
-];
+] as const;
 
-const MEMBERSHIP: [string, string, string][] = [
+const MEMBERSHIP = [
 	["diamond", "💎", "Diamond"],
 	["crown", "👑", "Crown"],
 	["star", "⭐", "Star"],
@@ -72,9 +90,9 @@ const MEMBERSHIP: [string, string, string][] = [
 	["rosette", "🏵️", "Rosette"],
 	["ribbon", "🎗️", "Ribbon"],
 	["comet", "☄️", "Comet"],
-];
+] as const;
 
-const EMOJI: [string, string, string][] = [
+const EMOJI = [
 	["grinning", "😀", "Grinning"],
 	["smile", "😄", "Smile"],
 	["joy", "😂", "Tears of joy"],
@@ -115,10 +133,18 @@ const EMOJI: [string, string, string][] = [
 	["moon", "🌙", "Moon"],
 	["sun", "☀️", "Sun"],
 	["snow", "❄️", "Snow"],
-];
+] as const;
 
-function build(rows: [string, string, string][], group: FlairGroupId): Flair[] {
-	return rows.map(([id, emoji, name]) => ({ id, emoji, name, group }));
+function build(
+	rows: readonly (readonly [string, string, string])[],
+	group: FlairGroupId,
+): Flair[] {
+	return rows.map(([id, emoji, name]) => ({
+		id: id as FlairId,
+		emoji,
+		name,
+		group,
+	}));
 }
 
 const FLAIRS: readonly Flair[] = [
@@ -128,7 +154,10 @@ const FLAIRS: readonly Flair[] = [
 	...build(EMOJI, "emoji"),
 ];
 
-const BY_ID = new Map(FLAIRS.map((flair) => [flair.id, flair]));
+// Keyed by plain string, not FlairId: every caller below is handed something
+// untrusted — a column, a form field, a URL — and deciding whether it names a
+// flair is exactly what they are for.
+const BY_ID = new Map<string, Flair>(FLAIRS.map((flair) => [flair.id, flair]));
 
 /** `null` for "none" and for an id that no longer names anything. */
 export function flairById(id: string | null | undefined): Flair | null {
@@ -149,12 +178,22 @@ export function flairNeedsMembership(id: string): boolean {
  * The picker's search. Matches the name and the id, so both "crown" and "gold
  * medal" find what you would expect; an empty query is the whole catalogue.
  */
-export function searchFlairs(query: string): readonly Flair[] {
+/**
+ * `name` lets a caller search the list in the reader's own language. Without it
+ * this falls back to the English names, which is right for anything with no
+ * React context to read a locale from.
+ *
+ * The id is always matched too, so "queen" still finds Dama.
+ */
+export function searchFlairs(
+	query: string,
+	name: (flair: Flair) => string = (flair) => flair.name,
+): readonly Flair[] {
 	const needle = query.trim().toLowerCase();
 	if (!needle) return FLAIRS;
 
 	return FLAIRS.filter(
 		(flair) =>
-			flair.name.toLowerCase().includes(needle) || flair.id.includes(needle),
+			name(flair).toLowerCase().includes(needle) || flair.id.includes(needle),
 	);
 }

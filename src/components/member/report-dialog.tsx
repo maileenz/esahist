@@ -43,6 +43,8 @@ export default function ReportDialog({
 }) {
 	const common = useTranslations("common");
 	const t = useTranslations("report");
+	const groups = useTranslations("report.groups");
+	const reasons = useTranslations("report.reasons");
 	const blockId = useId();
 	const [reason, setReason] = useState<string | null>(null);
 	const [alsoBlock, setAlsoBlock] = useState(false);
@@ -88,9 +90,9 @@ export default function ReportDialog({
 					value={reason ?? ""}
 				>
 					{REPORT_GROUPS.map((group) => (
-						<div key={group.label}>
+						<div key={group.id}>
 							<p className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-								{group.label}
+								{groups(group.id)}
 							</p>
 
 							<div className="grid gap-2">
@@ -98,7 +100,7 @@ export default function ReportDialog({
 									<div className="flex items-center gap-2.5" key={option.id}>
 										<RadioGroupItem id={option.id} value={option.id} />
 										<Label className="font-normal" htmlFor={option.id}>
-											{option.label}
+											{reasons(option.id)}
 										</Label>
 									</div>
 								))}

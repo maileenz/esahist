@@ -220,6 +220,8 @@ function AvatarPicker({ profile }: { profile: Profile }) {
  */
 function FlairForm({ profile }: { profile: Profile }) {
 	const t = useTranslations("profileSettings");
+	const groups = useTranslations("profileSettings.flairGroups");
+	const names = useTranslations("flairs");
 	const saved = useSaver();
 	const [query, setQuery] = useState("");
 
@@ -237,7 +239,10 @@ function FlairForm({ profile }: { profile: Profile }) {
 	});
 
 	const chosen = form.watch("flair");
-	const matches = useMemo(() => searchFlairs(query), [query]);
+	const matches = useMemo(
+		() => searchFlairs(query, (flair) => names(flair.id)),
+		[query, names],
+	);
 
 	const pick = (id: string | null) =>
 		form.setValue("flair", id, { shouldDirty: true });
@@ -297,7 +302,7 @@ function FlairForm({ profile }: { profile: Profile }) {
 						return (
 							<section className="mb-4 last:mb-0" key={group.id}>
 								<h4 className="flex items-center gap-1.5 font-bold text-fg text-sm">
-									{group.label}
+									{groups(group.id)}
 									{locked && (
 										<span className="flex items-center gap-1 font-semibold text-subtle text-xs">
 											<Lock aria-hidden className="h-3 w-3" />
@@ -343,16 +348,19 @@ function FlairButton({
 	locked: boolean;
 	onPick: () => void;
 }) {
+	const t = useTranslations("profileSettings");
+	const name = useTranslations("flairs")(flair.id);
+
 	return (
 		<button
-			aria-label={flair.name}
+			aria-label={name}
 			aria-pressed={chosen}
 			className={`flex h-9 w-9 items-center justify-center rounded-lg text-lg transition ${
 				chosen ? "bg-brand-soft ring-2 ring-primary" : "hover:bg-surface"
 			} ${locked ? "cursor-not-allowed opacity-40" : ""}`}
 			disabled={locked}
 			onClick={onPick}
-			title={locked ? `${flair.name} — members only` : flair.name}
+			title={locked ? `${name} — ${t("membersOnly")}` : name}
 			type="button"
 		>
 			{flair.emoji}

@@ -33,6 +33,7 @@ export default function GameSetup({
 	onPlay: () => void;
 }) {
 	const t = useTranslations("lobby");
+	const categories = useTranslations("categories");
 	const selected = TIME_CONTROLS[settings.timeControl];
 	const category = TIME_CONTROLS_BY_CATEGORY.find(
 		(group) => group.category === selected.category,
@@ -93,7 +94,8 @@ export default function GameSetup({
 								return (
 									<div key={group.category}>
 										<h2 className="mb-1.5 flex items-center gap-1.5 font-semibold text-muted-foreground text-xs">
-											<span aria-hidden>{group.icon}</span> {group.label}
+											<span aria-hidden>{group.icon}</span>{" "}
+											{categories(group.category)}
 										</h2>
 										<div className="grid grid-cols-3 gap-2">
 											{options.map((control) => {

@@ -1,22 +1,23 @@
 /**
  * ISO 3166-1 alpha-2. Only the code is ever stored; this file is what turns one
- * into something a person can read.
+ * into something a person can read, in whichever language they are reading.
  *
- * The names are a table rather than `Intl.DisplayNames`, which is the obvious
- * thing to reach for and is wrong here: the display names come from whichever
- * CLDR version the *runtime* was built against, so Node and the browser
- * disagree — measured, on this pair, for FK, HK, MO and PS. Any country name
- * rendered by a client component is therefore a hydration mismatch waiting for
- * somebody from Hong Kong to sign up. A table is boring and identical
- * everywhere, which is the entire requirement.
+ * The names are a generated table rather than a live `Intl.DisplayNames`, which
+ * is the obvious thing to reach for and is wrong here: the display names come
+ * from whichever CLDR version the *runtime* was built against, so Node and the
+ * browser disagree — measured, on this pair, for FK, HK, MO and PS. Any country
+ * name rendered by a client component would therefore be a hydration mismatch
+ * waiting for somebody from Hong Kong to sign up. A table is boring and
+ * identical everywhere, which is the entire requirement.
  *
- * English only, deliberately: these are one CLDR version's names, and mixing in
- * a second locale's would mean maintaining a matrix instead of a list.
+ * Every locale is generated together, from one Node, by
+ * `scripts/generate-country-names.ts` — so a second language costs nothing to
+ * maintain and cannot drift from the first.
  */
-const CODES =
-	"AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW";
 
-const COUNTRY_CODES: readonly string[] = CODES.split(" ");
+import { type AppLocale, DEFAULT_LOCALE } from "@/i18n/locales";
+
+import { COUNTRY_CODES, COUNTRY_NAMES } from "./country-names";
 
 const CODE_SET = new Set(COUNTRY_CODES);
 
@@ -35,77 +36,42 @@ export function toCountryCode(value: unknown): string | null {
 }
 
 /**
- * `code=Name` pairs, from CLDR by way of Node's `Intl.DisplayNames`. Regenerate
- * wholesale rather than editing one entry, so the list stays one version.
+ * Unpacked on first use and kept, rather than at module load: a page that
+ * renders one flag pays for one locale, not for every language the site
+ * offers.
  */
-const NAMES =
-	"AD=Andorra|AE=United Arab Emirates|AF=Afghanistan|" +
-	"AG=Antigua & Barbuda|AI=Anguilla|AL=Albania|AM=Armenia|AO=Angola|" +
-	"AQ=Antarctica|AR=Argentina|AS=American Samoa|AT=Austria|AU=Australia|" +
-	"AW=Aruba|AX=Åland Islands|AZ=Azerbaijan|BA=Bosnia & Herzegovina|" +
-	"BB=Barbados|BD=Bangladesh|BE=Belgium|BF=Burkina Faso|BG=Bulgaria|" +
-	"BH=Bahrain|BI=Burundi|BJ=Benin|BL=St. Barthélemy|BM=Bermuda|" +
-	"BN=Brunei|BO=Bolivia|BQ=Caribbean Netherlands|BR=Brazil|BS=Bahamas|" +
-	"BT=Bhutan|BV=Bouvet Island|BW=Botswana|BY=Belarus|BZ=Belize|" +
-	"CA=Canada|CC=Cocos (Keeling) Islands|CD=Congo - Kinshasa|" +
-	"CF=Central African Republic|CG=Congo - Brazzaville|CH=Switzerland|" +
-	"CI=Côte d’Ivoire|CK=Cook Islands|CL=Chile|CM=Cameroon|CN=China|" +
-	"CO=Colombia|CR=Costa Rica|CU=Cuba|CV=Cape Verde|CW=Curaçao|" +
-	"CX=Christmas Island|CY=Cyprus|CZ=Czechia|DE=Germany|DJ=Djibouti|" +
-	"DK=Denmark|DM=Dominica|DO=Dominican Republic|DZ=Algeria|EC=Ecuador|" +
-	"EE=Estonia|EG=Egypt|EH=Western Sahara|ER=Eritrea|ES=Spain|" +
-	"ET=Ethiopia|FI=Finland|FJ=Fiji|FK=Falkland Islands|FM=Micronesia|" +
-	"FO=Faroe Islands|FR=France|GA=Gabon|GB=United Kingdom|GD=Grenada|" +
-	"GE=Georgia|GF=French Guiana|GG=Guernsey|GH=Ghana|GI=Gibraltar|" +
-	"GL=Greenland|GM=Gambia|GN=Guinea|GP=Guadeloupe|GQ=Equatorial Guinea|" +
-	"GR=Greece|GS=South Georgia & South Sandwich Islands|GT=Guatemala|" +
-	"GU=Guam|GW=Guinea-Bissau|GY=Guyana|HK=Hong Kong SAR China|" +
-	"HM=Heard & McDonald Islands|HN=Honduras|HR=Croatia|HT=Haiti|" +
-	"HU=Hungary|ID=Indonesia|IE=Ireland|IL=Israel|IM=Isle of Man|IN=India|" +
-	"IO=British Indian Ocean Territory|IQ=Iraq|IR=Iran|IS=Iceland|" +
-	"IT=Italy|JE=Jersey|JM=Jamaica|JO=Jordan|JP=Japan|KE=Kenya|" +
-	"KG=Kyrgyzstan|KH=Cambodia|KI=Kiribati|KM=Comoros|" +
-	"KN=St. Kitts & Nevis|KP=North Korea|KR=South Korea|KW=Kuwait|" +
-	"KY=Cayman Islands|KZ=Kazakhstan|LA=Laos|LB=Lebanon|LC=St. Lucia|" +
-	"LI=Liechtenstein|LK=Sri Lanka|LR=Liberia|LS=Lesotho|LT=Lithuania|" +
-	"LU=Luxembourg|LV=Latvia|LY=Libya|MA=Morocco|MC=Monaco|MD=Moldova|" +
-	"ME=Montenegro|MF=St. Martin|MG=Madagascar|MH=Marshall Islands|" +
-	"MK=North Macedonia|ML=Mali|MM=Myanmar (Burma)|MN=Mongolia|" +
-	"MO=Macao SAR China|MP=Northern Mariana Islands|MQ=Martinique|" +
-	"MR=Mauritania|MS=Montserrat|MT=Malta|MU=Mauritius|MV=Maldives|" +
-	"MW=Malawi|MX=Mexico|MY=Malaysia|MZ=Mozambique|NA=Namibia|" +
-	"NC=New Caledonia|NE=Niger|NF=Norfolk Island|NG=Nigeria|NI=Nicaragua|" +
-	"NL=Netherlands|NO=Norway|NP=Nepal|NR=Nauru|NU=Niue|NZ=New Zealand|" +
-	"OM=Oman|PA=Panama|PE=Peru|PF=French Polynesia|PG=Papua New Guinea|" +
-	"PH=Philippines|PK=Pakistan|PL=Poland|PM=St. Pierre & Miquelon|" +
-	"PN=Pitcairn Islands|PR=Puerto Rico|PS=Palestinian Territories|" +
-	"PT=Portugal|PW=Palau|PY=Paraguay|QA=Qatar|RE=Réunion|RO=Romania|" +
-	"RS=Serbia|RU=Russia|RW=Rwanda|SA=Saudi Arabia|SB=Solomon Islands|" +
-	"SC=Seychelles|SD=Sudan|SE=Sweden|SG=Singapore|SH=St. Helena|" +
-	"SI=Slovenia|SJ=Svalbard & Jan Mayen|SK=Slovakia|SL=Sierra Leone|" +
-	"SM=San Marino|SN=Senegal|SO=Somalia|SR=Suriname|SS=South Sudan|" +
-	"ST=São Tomé & Príncipe|SV=El Salvador|SX=Sint Maarten|SY=Syria|" +
-	"SZ=Eswatini|TC=Turks & Caicos Islands|TD=Chad|" +
-	"TF=French Southern Territories|TG=Togo|TH=Thailand|TJ=Tajikistan|" +
-	"TK=Tokelau|TL=Timor-Leste|TM=Turkmenistan|TN=Tunisia|TO=Tonga|" +
-	"TR=Türkiye|TT=Trinidad & Tobago|TV=Tuvalu|TW=Taiwan|TZ=Tanzania|" +
-	"UA=Ukraine|UG=Uganda|UM=U.S. Outlying Islands|US=United States|" +
-	"UY=Uruguay|UZ=Uzbekistan|VA=Vatican City|VC=St. Vincent & Grenadines|" +
-	"VE=Venezuela|VG=British Virgin Islands|VI=U.S. Virgin Islands|" +
-	"VN=Vietnam|VU=Vanuatu|WF=Wallis & Futuna|WS=Samoa|YE=Yemen|" +
-	"YT=Mayotte|ZA=South Africa|ZM=Zambia|ZW=Zimbabwe";
+const byLocale = new Map<AppLocale, Map<string, string>>();
 
-const NAME_BY_CODE = new Map(
-	NAMES.split("|").map((pair) => {
-		const [code, name] = pair.split("=");
-		return [code as string, name as string];
-	}),
-);
+function namesFor(locale: AppLocale): Map<string, string> {
+	const cached = byLocale.get(locale);
+	if (cached) return cached;
 
-/** "RO" → "Romania". Falls back to the code for anything unlisted. */
-export function countryName(code: string): string {
+	const packed = COUNTRY_NAMES[locale] ?? COUNTRY_NAMES[DEFAULT_LOCALE];
+	const names = new Map(
+		packed.split("|").map((pair) => {
+			const [code, name] = pair.split("=");
+			return [code as string, name as string];
+		}),
+	);
+
+	byLocale.set(locale, names);
+	return names;
+}
+
+/**
+ * "RO" → "Romania", or "România" in Romanian. Falls back to the code for
+ * anything unlisted.
+ *
+ * The locale is a parameter rather than something read from context, so this
+ * stays a plain function usable from anywhere — a server component, a client
+ * component, or the Colyseus process, which has no React around it at all.
+ */
+export function countryName(
+	code: string,
+	locale: AppLocale = DEFAULT_LOCALE,
+): string {
 	const upper = code.toUpperCase();
-	return NAME_BY_CODE.get(upper) ?? upper;
+	return namesFor(locale).get(upper) ?? upper;
 }
 
 /**
@@ -114,11 +80,18 @@ export function countryName(code: string): string {
  * up there as the bare letters "RO".
  */
 
-/** Sorted for a picker: name order, not code order. */
-export function countryOptions(): { code: string; name: string }[] {
-	return COUNTRY_CODES.map((code) => ({ code, name: countryName(code) })).sort(
-		(a, b) => a.name.localeCompare(b.name),
-	);
+/**
+ * Sorted for a picker: name order, not code order, and in the reader's own
+ * collation — Romanian sorts "Ț" after "T" rather than after "Z", which is
+ * where a plain byte comparison would put it.
+ */
+export function countryOptions(
+	locale: AppLocale = DEFAULT_LOCALE,
+): { code: string; name: string }[] {
+	return COUNTRY_CODES.map((code) => ({
+		code,
+		name: countryName(code, locale),
+	})).sort((a, b) => a.name.localeCompare(b.name, locale));
 }
 
 /**

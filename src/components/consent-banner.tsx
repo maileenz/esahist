@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, Cookie, SlidersHorizontal, X } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 
@@ -96,7 +97,16 @@ export default function ConsentBanner() {
 							</h2>
 
 							<p className="mt-1 text-muted-foreground text-sm">
-								{t("barBody")}
+								{t("barBody")}{" "}
+								{/* In the bar itself, because this is the moment the reader is
+								    being asked to decide and the policy is what the decision is
+								    about. */}
+								<Link
+									className="font-semibold text-fg underline underline-offset-2"
+									href="/privacy-policy"
+								>
+									{t("policyLink")}
+								</Link>
 							</p>
 						</div>
 

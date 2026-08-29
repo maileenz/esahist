@@ -30,8 +30,9 @@ export default async function MemberOverviewPage({
 	const { username } = await params;
 	const handle = decodeURIComponent(username).toLowerCase();
 
-	// The layout has already resolved the member and redirected anyone signed
-	// out, so by here these are all guaranteed to land.
+	// The layout has already resolved the member and 404ed an unknown one, so
+	// by here these are all guaranteed to land. No session is needed: all three
+	// procedures are public, the same as the profile itself.
 	const [member, history, recent] = await Promise.all([
 		// Already resolved by the layout; `memberProfile` is what stops that being
 		// a second trip to the database.

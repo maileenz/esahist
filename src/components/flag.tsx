@@ -1,3 +1,5 @@
+import { useLocale } from "next-intl";
+
 import { countryName, isCountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 
@@ -24,9 +26,14 @@ export default function Flag({
 	/** 1:1 instead of the default 4:3. */
 	square?: boolean;
 }) {
+	// Above the early return, because a hook cannot be called conditionally.
+	// `useLocale` resolves in both trees — next-intl ships a server build of it —
+	// so a flag renders the same name whether it was streamed or hydrated.
+	const locale = useLocale();
+
 	if (!isCountryCode(code)) return null;
 
-	const name = countryName(code);
+	const name = countryName(code, locale);
 	return (
 		<span
 			aria-label={name}

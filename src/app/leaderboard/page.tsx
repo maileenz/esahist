@@ -3,13 +3,14 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import { CATEGORY_ICONS } from "@/components/category-icon";
+import JsonLd from "@/components/json-ld";
 import {
 	type LeaderboardPlayer,
 	Place,
 	Player,
 } from "@/components/leaderboard/bits";
 import { toCountryCode } from "@/lib/countries";
-import { CATEGORY_META } from "@/lib/timeControls";
+import { breadcrumbs, SITE_NAME } from "@/lib/seo";
 import { api } from "@/trpc/server";
 
 /**
@@ -22,6 +23,8 @@ export default async function LeaderboardPage({
 	searchParams: Promise<{ country?: string }>;
 }) {
 	const common = await getTranslations("common");
+	const t = await getTranslations("leaderboard");
+	const categories = await getTranslations("categories");
 	// An unknown code reads as global rather than as a filter that matches
 	// nothing, which is what a hand-edited URL would otherwise produce.
 	const country = toCountryCode((await searchParams).country);
@@ -29,6 +32,14 @@ export default async function LeaderboardPage({
 
 	return (
 		<div className="flex flex-col gap-4">
+			{/* Home › Leaderboard. The pool pages add their own third crumb. */}
+			<JsonLd
+				data={breadcrumbs([
+					{ name: SITE_NAME, path: "/" },
+					{ name: t("title"), path: "/leaderboard" },
+				])}
+			/>
+
 			{boards.map(({ category, players }) => {
 				const Icon = CATEGORY_ICONS[category];
 
@@ -46,15 +57,15 @@ export default async function LeaderboardPage({
 									className="h-7 w-7 text-primary sm:h-9 sm:w-9"
 								/>
 								<span className="font-bold text-fg text-lg">
-									{CATEGORY_META[category].label}
+									{categories(category)}
 								</span>
 							</div>
 
 							{players.length === 0 ? (
 								<p className="flex-1 py-4 text-center text-muted-foreground text-sm">
 									{country
-										? `Nobody here has a rated ${CATEGORY_META[category].label.toLowerCase()} game yet.`
-										: `Nobody has played a rated ${CATEGORY_META[category].label.toLowerCase()} game yet.`}
+										? t("emptyCategoryHere", { category: categories(category) })
+										: t("emptyCategory", { category: categories(category) })}
 								</p>
 							) : (
 								<ol className="min-w-0 flex-1">
