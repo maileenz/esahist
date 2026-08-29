@@ -14,7 +14,12 @@ const DESKTOP = "(min-width: 64rem)";
 /**
  * Owns the one piece of state the sidebar needs: whether the mobile drawer is
  * open. The contents stay a server component and arrive as `children`, so
- * nothing here needs the session.
+ * nothing here reads the session — but it does need to be *told* about it, for
+ * the pending-requests dot on the trigger. That badge queries a protected
+ * procedure, and this shell used to render only for signed-in members, so
+ * mounting it was always safe. It is not any more: the rail is drawn for
+ * visitors too, and an unguarded badge fires `friend.pendingCount` at every one
+ * of them and logs an UNAUTHORIZED to their console.
  *
  * Below `lg` the rail is a drawer behind a header; from `lg` up the header is
  * gone and the rail is part of the layout, pinned to the top of the viewport
@@ -22,8 +27,11 @@ const DESKTOP = "(min-width: 64rem)";
  */
 export default function SidebarShell({
 	children,
+	signedIn,
 }: {
 	children: React.ReactNode;
+	/** Whether there is an account behind this rail, and so anything to count. */
+	signedIn: boolean;
 }) {
 	const [open, setOpen] = useState(false);
 	const t = useTranslations("nav");
@@ -102,9 +110,11 @@ export default function SidebarShell({
 					<Menu aria-hidden className="h-5 w-5" />
 					{/* With the drawer shut there is nowhere else to show a pending
 					    request, so the trigger carries the dot. */}
-					<span className="absolute -top-0.5 -right-0.5">
-						<FriendRequestsBadge dot />
-					</span>
+					{signedIn && (
+						<span className="absolute -top-0.5 -right-0.5">
+							<FriendRequestsBadge dot />
+						</span>
+					)}
 				</button>
 
 				<Brand className="text-xl" />

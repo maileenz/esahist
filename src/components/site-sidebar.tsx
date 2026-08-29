@@ -80,7 +80,7 @@ export default async function SiteSidebar() {
 			];
 
 	return (
-		<SidebarShell>
+		<SidebarShell signedIn={Boolean(user?.username)}>
 			<Link className="shrink-0 px-4 py-4" href="/">
 				<Brand className="text-xl" />
 			</Link>
