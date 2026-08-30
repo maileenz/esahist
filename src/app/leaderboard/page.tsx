@@ -48,7 +48,7 @@ export default async function LeaderboardPage({
 						className="overflow-hidden rounded-xl border border-line bg-surface shadow-sm"
 						key={category}
 					>
-						<div className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:gap-6">
+						<div className="flex flex-col gap-2 p-4 sm:min-h-26 sm:flex-row sm:items-center sm:gap-6">
 							{/* The pool's name sits beside its standings rather than above
 							    them, which is what keeps four boards on one screen. */}
 							<div className="flex shrink-0 items-center gap-3 sm:w-36 sm:flex-col sm:justify-center sm:gap-1">
@@ -88,7 +88,9 @@ export default async function LeaderboardPage({
 						{players.length > 0 && (
 							<Link
 								className="flex items-center justify-center gap-1 border-line border-t px-4 py-3 font-semibold text-muted-foreground text-sm transition hover:bg-elevated hover:text-fg"
-								href={`/leaderboard/${category}${country ? `?country=${country}` : ""}`}
+								href={`/leaderboard/${category}${
+									country ? `?country=${country}` : ""
+								}`}
 							>
 								{common("seeAll")}
 								<ChevronRight aria-hidden className="h-4 w-4" />

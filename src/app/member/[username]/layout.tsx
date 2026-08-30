@@ -35,7 +35,14 @@ export async function generateMetadata({
 	// Free: `memberProfile` is cached per request and the layout below calls it.
 	// No session check any more — the procedure behind it is public.
 	const member = await memberProfile(typed);
-	if (!member) return { title: t("metaTitle", { username: typed }) };
+	/*
+	 * Nothing to describe: the page below calls `notFound()`, and this metadata
+	 * is what the 404 is served with. Claiming a title, a canonical or a card for
+	 * an address that does not exist is a small lie that also puts whatever was
+	 * typed into the URL onto the tab. Returning nothing falls back to the site
+	 * name in the root layout, which is the truth.
+	 */
+	if (!member) return {};
 
 	const title = t("metaTitle", { username: member.username });
 	const description = t("metaDescription", {

@@ -346,8 +346,8 @@ real domain in search results. It also means **a production container with no
 `AUTH_URL` is invisible to search engines**, silently. If the site stops
 appearing in Google, check this variable first.
 
-Also set `ALLOW_ANONYMOUS=false`. And note that the six OAuth values — Discord,
-GitHub and Facebook — are **not** optional — `src/env.js` declares them as required strings, so the web container
+Also set `ALLOW_ANONYMOUS=false`. And note that the eight OAuth values — Discord,
+GitHub, Facebook and Google — are **not** optional — `src/env.js` declares them as required strings, so the web container
 fails validation and exits if any is blank.
 
 Two things you do not need to do:

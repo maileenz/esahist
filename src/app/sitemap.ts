@@ -121,13 +121,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		},
 
 		/*
-		 * Reachable without a session and never changing, which is exactly what a
-		 * sign-in provider's reviewer checks for. Low priority — nobody searches
-		 * for it — but it must be crawlable, so it is declared rather than left to
-		 * be found through a footer link.
+		 * Reachable without a session and rarely changing, which is exactly what a
+		 * sign-in provider's reviewer checks for — Google's consent screen asks for
+		 * both of these URLs and fetches them. Low priority, since nobody searches
+		 * for them, but they must be crawlable, so they are declared rather than
+		 * left to be found through a link.
 		 */
 		{
 			url: absoluteUrl("/privacy-policy"),
+			lastModified: now,
+			changeFrequency: "yearly",
+			priority: 0.3,
+		},
+		{
+			url: absoluteUrl("/terms-of-service"),
 			lastModified: now,
 			changeFrequency: "yearly",
 			priority: 0.3,

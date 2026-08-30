@@ -8,7 +8,6 @@ import { toCountryCode } from "@/lib/countries";
 import {
 	breadcrumbs,
 	canonical,
-	NOINDEX,
 	openGraphFor,
 	SITE_NAME,
 	twitterFor,
@@ -24,11 +23,21 @@ export async function generateMetadata({
 	const { category } = await params;
 	const t = await getTranslations("leaderboard");
 
-	// The bare title for an unknown pool: the page itself will 404, but the tab
-	// is titled before that is known. No canonical either — there is nothing to
-	// be the canonical address of.
-	if (!isRatingCategory(category))
-		return { title: t("metaTitle"), robots: NOINDEX };
+	/*
+	 * Nothing to describe: the page below calls `notFound()`, and this metadata
+	 * is what the 404 is served with. Claiming a title, a canonical or a card for
+	 * an address that does not exist is a small lie that also puts whatever was
+	 * typed into the URL onto the tab. Returning nothing falls back to the site
+	 * name in the root layout, which is the truth.
+	 */
+	/*
+	 * This still inherits the leaderboard layout's title and canonical, which is
+	 * as far as Next lets a page opt out — `alternates: { canonical: null }` does
+	 * not override an inherited one. It is left alone rather than worked around:
+	 * the response is a 404, and a canonical on a 404 is not a signal any crawler
+	 * acts on.
+	 */
+	if (!isRatingCategory(category)) return {};
 
 	const categories = await getTranslations("categories");
 	const locale = await getLocale();

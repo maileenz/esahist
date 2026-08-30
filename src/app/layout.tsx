@@ -7,11 +7,8 @@ import "flag-icons/css/flag-icons.min.css";
 import type { Metadata, Viewport } from "next";
 import { Geist, Gluten } from "next/font/google";
 import { getLocale, getTranslations } from "next-intl/server";
-import NextTopLoader from "nextjs-toploader";
-import ConsentBanner from "@/components/consent-banner";
-import { Providers } from "@/components/providers";
 import SiteSidebar from "@/components/site-sidebar";
-import { Toaster } from "@/components/ui/sonner";
+import { Wrapper } from "@/components/wrapper";
 import {
 	isIndexableDeployment,
 	openGraphFor,
@@ -172,22 +169,12 @@ export default async function RootLayout({
 				className="min-h-screen bg-canvas font-sans text-fg"
 				suppressHydrationWarning
 			>
-				<NextTopLoader color="#81b64c" shadow={false} showSpinner={false} />
-				<Providers appearance={appearance}>
-					{/* Column on mobile — the drawer is out of flow and its header
-					    sits on top; a row from `lg`, where the rail is in flow. */}
+				<Wrapper>
 					<div className="lg:flex lg:min-h-screen">
 						<SiteSidebar />
 						<div className="min-w-0 flex-1">{children}</div>
 					</div>
-
-					{/* Inside `Providers` so it can read the site theme. */}
-					<Toaster position="bottom-center" />
-
-					{/* Every page, signed in or not — the visitor who has not signed up
-					    is exactly the one who has not been asked yet. */}
-					<ConsentBanner />
-				</Providers>
+				</Wrapper>
 			</body>
 		</html>
 	);

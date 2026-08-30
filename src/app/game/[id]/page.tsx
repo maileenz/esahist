@@ -34,7 +34,14 @@ export async function generateMetadata({
 
 	const url = `/game/${encodeURIComponent(id)}`;
 	const game = await gameById(id);
-	if (!game) return { title: t("metaTitle"), alternates: canonical(url) };
+	/*
+	 * Nothing to describe: the page below calls `notFound()`, and this metadata
+	 * is what the 404 is served with. Claiming a title, a canonical or a card for
+	 * an address that does not exist is a small lie that also puts whatever was
+	 * typed into the URL onto the tab. Returning nothing falls back to the site
+	 * name in the root layout, which is the truth.
+	 */
+	if (!game) return {};
 
 	// The reader's own date order: 5 Aug 2026 here, 5 aug. 2026 in Romanian.
 	// Pinning this to en-GB made every tab English regardless of the language.

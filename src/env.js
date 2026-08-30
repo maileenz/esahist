@@ -29,6 +29,8 @@ export const env = createEnv({
 		AUTH_GITHUB_SECRET: z.string(),
 		AUTH_FACEBOOK_ID: z.string(),
 		AUTH_FACEBOOK_SECRET: z.string(),
+		AUTH_GOOGLE_ID: z.string(),
+		AUTH_GOOGLE_SECRET: z.string(),
 
 		// Colyseus process — read there via process.env, declared here for completeness.
 		GAME_PORT: z.coerce.number().int().positive().default(2567),
@@ -102,6 +104,8 @@ export const env = createEnv({
 		AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET,
 		AUTH_FACEBOOK_ID: process.env.AUTH_FACEBOOK_ID,
 		AUTH_FACEBOOK_SECRET: process.env.AUTH_FACEBOOK_SECRET,
+		AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
+		AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
 		GAME_PORT: process.env.GAME_PORT,
 		ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
 		ALLOW_ANONYMOUS: process.env.ALLOW_ANONYMOUS,

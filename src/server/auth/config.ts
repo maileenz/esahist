@@ -3,6 +3,7 @@ import type { DefaultSession, NextAuthConfig } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import FacebookProvider from "next-auth/providers/facebook";
 import GitHubProvider from "next-auth/providers/github";
+import GoogleProvider, { type GoogleProfile } from "next-auth/providers/google";
 
 import { db } from "@/server/db";
 import {
@@ -50,11 +51,25 @@ const discord = DiscordProvider({});
 const github = GitHubProvider({});
 const facebook = FacebookProvider({});
 
+/**
+ * Google is the odd one out: an OIDC provider, not an OAuth one.
+ *
+ * The other three ship a `profile()` that turns their bespoke API response into
+ * a user, and we wrap it to add our own two fields. Google ships none — Auth.js
+ * reads the standard OIDC claims itself — so there is nothing to wrap and the
+ * mapping below is written out in full. The four lines before `username` are
+ * exactly what Auth.js would have derived on its own; they are here because
+ * supplying a `profile` replaces the default rather than extending it.
+ */
+const google = GoogleProvider({});
+
 const discordProfile = discord.profile;
 const githubProfile = github.profile;
 const facebookProfile = facebook.profile;
 
-// Optional on the type for custom providers; all three built-ins always set it.
+// Optional on the type for custom providers; the three OAuth built-ins always
+// set it. Google is not in this list because OIDC providers have no `profile`
+// to borrow — see the note above it.
 if (!discordProfile || !githubProfile || !facebookProfile) {
 	throw new Error("Expected the built-in providers to map profiles");
 }
@@ -117,6 +132,31 @@ export const authConfig = {
 					country: await guessCountry(null),
 				};
 			},
+		},
+
+		{
+			...google,
+			profile: async (profile: GoogleProfile) => ({
+				// What Auth.js derives by default from the OIDC claims, restated
+				// because a `profile` of our own replaces that default.
+				id: profile.sub,
+				name: profile.name,
+				email: profile.email,
+				image: profile.picture,
+				/*
+				 * Google has no handle either — `sub` is a number nobody would want as
+				 * a URL — so the slug comes from the display name, as it does for
+				 * Facebook. Deliberately not the email's local part: usernames are
+				 * public and indexed, and half an address is still half an address.
+				 */
+				username: await uniqueUsername(
+					profile.name ?? profile.email ?? "player",
+				),
+				// Google's `locale` is a language tag like `ro` or `en-GB`, so it only
+				// says anything about a country when it carries a region — the same
+				// caveat as Discord's.
+				country: await guessCountry(profile.locale ?? null),
+			}),
 		},
 
 		/**

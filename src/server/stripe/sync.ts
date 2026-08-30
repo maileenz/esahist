@@ -60,13 +60,8 @@ export async function stripeCustomerFor(userId: string): Promise<string> {
 		.set({ stripeCustomerId: customer.id })
 		.where(and(eq(users.id, userId), isNull(users.stripeCustomerId)));
 
-	const [saved] = await db
-		.select({ stripeCustomerId: users.stripeCustomerId })
-		.from(users)
-		.where(eq(users.id, userId))
-		.limit(1);
 
-	return saved?.stripeCustomerId ?? customer.id;
+	return customer.id;
 }
 
 /**

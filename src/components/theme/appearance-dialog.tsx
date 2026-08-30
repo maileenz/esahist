@@ -1,10 +1,9 @@
 "use client";
 
 import { Settings2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,8 +15,6 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { type AppLocale, LOCALE_LABELS, LOCALES } from "@/i18n/locales";
-import { setLocale } from "@/i18n/set-locale";
 import { SITE_THEMES } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
@@ -39,21 +36,6 @@ export function AppearanceButton({ className }: { className?: string }) {
 	const { theme, setTheme } = useTheme();
 	const mounted = useMounted();
 
-	// The language is server state — it decides what the *next* render says — so
-	// switching it writes a cookie and asks for the page again, rather than
-	// swapping strings in place and leaving the server's copy behind.
-	const locale = useLocale();
-	const router = useRouter();
-	const [switching, startSwitching] = useTransition();
-
-	const chooseLanguage = (next: AppLocale) => {
-		if (next === locale) return;
-		startSwitching(async () => {
-			await setLocale(next);
-			router.refresh();
-		});
-	};
-
 	// next-themes only knows the stored theme after mount; until then nothing is
 	// marked active rather than the wrong thing being marked active.
 	const active = mounted ? (theme ?? SYSTEM) : null;
@@ -67,7 +49,10 @@ export function AppearanceButton({ className }: { className?: string }) {
 						className={className}
 						type="button"
 					>
-						<Settings2 aria-hidden className="h-4 w-4" />
+						{/* `h-5 w-5`, matching `SidebarNav`'s icons: this branch is only
+						    ever the row in the rail, and at 16px its label started four
+						    pixels left of every other row's. */}
+						<Settings2 aria-hidden className="h-5 w-5 shrink-0" />
 						{nav("appearance")}
 					</button>
 				) : (
@@ -82,28 +67,6 @@ export function AppearanceButton({ className }: { className?: string }) {
 				<DialogHeader>
 					<DialogTitle>{t("title")}</DialogTitle>
 				</DialogHeader>
-
-				<section>
-					<h3 className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-						{t("language")}
-					</h3>
-
-					<div className="mt-2 grid grid-cols-3 gap-2">
-						{LOCALES.map((code) => (
-							<OptionCard
-								active={code === locale}
-								disabled={switching}
-								key={code}
-								onClick={() => chooseLanguage(code)}
-							>
-								{/* Named in its own language, never translated: somebody
-								    looking for their language is looking for the word they
-								    would use for it. */}
-								{LOCALE_LABELS[code]}
-							</OptionCard>
-						))}
-					</div>
-				</section>
 
 				<section>
 					<h3 className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">

@@ -1,49 +1,12 @@
 "use client";
 
-import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { createContext, useCallback, useContext, useState } from "react";
 
 import {
 	boardThemeCss,
 	resolveBoardTheme,
 	resolvePieceSet,
-	SITE_THEME_IDS,
 } from "@/lib/themes";
-
-/**
- * Two independent axes: the site palette and the board.
- *
- * next-themes owns the site palette. It cannot own both — a nested
- * `ThemeProvider` sees the outer context and returns its children untouched
- * ("Ignore nested context providers"), so the second instance would silently do
- * nothing and `useTheme()` would resolve to whichever one won.
- *
- * The board axis is a small provider of its own, and unlike the site theme it
- * is *stored on the account*: the server already knows it, renders
- * `data-board` into the HTML, and hands the same values here as the starting
- * state. There is no blocking script and no `localStorage` — nothing to settle
- * before the first paint, because it was never unsettled.
- */
-export function ThemeProviders({
-	appearance,
-	children,
-}: {
-	appearance: { boardTheme: string; pieceSet: string };
-	children: React.ReactNode;
-}) {
-	return (
-		<NextThemesProvider
-			attribute="class"
-			defaultTheme="system"
-			disableTransitionOnChange
-			enableSystem
-			storageKey="site-theme"
-			themes={SITE_THEME_IDS}
-		>
-			<BoardProvider appearance={appearance}>{children}</BoardProvider>
-		</NextThemesProvider>
-	);
-}
 
 interface BoardApi {
 	boardTheme: string;
@@ -58,7 +21,7 @@ interface BoardApi {
 
 const BoardContext = createContext<BoardApi | null>(null);
 
-function BoardProvider({
+export function BoardProvider({
 	appearance,
 	children,
 }: {

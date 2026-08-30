@@ -75,6 +75,7 @@ export default async function LoginPage({
 }) {
 	const t = await getTranslations("auth");
 	const privacy = await getTranslations("privacyPolicy");
+	const terms = await getTranslations("terms");
 	const { callbackUrl, error } = await searchParams;
 	const target = safeCallbackUrl(callbackUrl);
 
@@ -115,22 +116,12 @@ export default async function LoginPage({
 				<div className="mt-6 flex flex-col gap-y-3">
 					<ProviderForm
 						callbackUrl={target}
-						className="bg-[#5865F2] text-white hover:bg-[#4752c4]"
-						label={t("continueWith", { provider: "Discord" })}
-						provider="discord"
+						className="border border-line bg-white text-[#1f1f1f] hover:bg-[#f2f2f2]"
+						label={t("continueWith", { provider: "Google" })}
+						provider="google"
 					>
-						<DiscordIcon />
+						<GoogleIcon />
 					</ProviderForm>
-
-					<ProviderForm
-						callbackUrl={target}
-						className="bg-[#24292f] text-white hover:bg-[#1b1f24]"
-						label={t("continueWith", { provider: "GitHub" })}
-						provider="github"
-					>
-						<GitHubIcon />
-					</ProviderForm>
-
 					<ProviderForm
 						callbackUrl={target}
 						className="bg-[#1877F2] text-white hover:bg-[#0f5fd0]"
@@ -139,18 +130,41 @@ export default async function LoginPage({
 					>
 						<FacebookIcon />
 					</ProviderForm>
+					{/**
+					<ProviderForm
+						callbackUrl={target}
+						className="bg-[#24292f] text-white hover:bg-[#1b1f24]"
+						label={t("continueWith", { provider: "GitHub" })}
+						provider="github"
+					>
+						<GitHubIcon />
+					</ProviderForm>
+					 */}
+					<ProviderForm
+						callbackUrl={target}
+						className="bg-[#5865F2] text-white hover:bg-[#4752c4]"
+						label={t("continueWith", { provider: "Discord" })}
+						provider="discord"
+					>
+						<DiscordIcon />
+					</ProviderForm>
 				</div>
 
 				<p className="mt-6 text-subtle text-xs">{t("footnote")}</p>
 
-				{/* Linked from the screen where consent is actually given, which is
-				    where a sign-in provider's reviewer looks for it. */}
-				<Link
-					className="mt-3 text-subtle text-xs underline hover:text-fg"
-					href="/privacy-policy"
-				>
-					{privacy("title")}
-				</Link>
+				{/* Both linked from the screen where consent is actually given, which
+				    is where a sign-in provider's reviewer looks for them — Google's
+				    consent screen wants a URL for each. One row rather than two
+				    stacked links, so they read as a pair of footnotes. */}
+				<div className="mt-3 flex items-center justify-center gap-2 text-subtle text-xs">
+					<Link className="underline hover:text-fg" href="/privacy-policy">
+						{privacy("title")}
+					</Link>
+					<span aria-hidden>·</span>
+					<Link className="underline hover:text-fg" href="/terms-of-service">
+						{terms("title")}
+					</Link>
+				</div>
 			</div>
 		</main>
 	);
@@ -192,6 +206,37 @@ function DiscordIcon() {
 		>
 			<title>Discord</title>
 			<path d="M20.317 4.369A19.79 19.79 0 0 0 15.432 3c-.21.375-.455.88-.624 1.28a18.27 18.27 0 0 0-5.616 0A12.6 12.6 0 0 0 8.56 3a19.74 19.74 0 0 0-4.886 1.372C.554 9.02-.32 13.554.114 18.023a19.9 19.9 0 0 0 6.001 3.036c.484-.66.916-1.362 1.288-2.1a12.9 12.9 0 0 1-2.028-.973c.17-.124.336-.253.496-.386a14.2 14.2 0 0 0 12.258 0c.162.135.328.264.497.386-.647.38-1.328.706-2.032.975a15.7 15.7 0 0 0 1.288 2.098 19.85 19.85 0 0 0 6.003-3.036c.5-5.177-.838-9.67-3.568-13.654ZM8.02 15.278c-1.182 0-2.157-1.085-2.157-2.419 0-1.333.955-2.42 2.157-2.42 1.21 0 2.176 1.096 2.156 2.42 0 1.334-.955 2.42-2.156 2.42Zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.42 2.157-2.42 1.21 0 2.176 1.096 2.156 2.42 0 1.334-.946 2.42-2.156 2.42Z" />
+		</svg>
+	);
+}
+
+/**
+ * Google's mark, in its four colours.
+ *
+ * The only icon here not drawn with `fill-current`: the others are
+ * single-colour glyphs that take the button's text colour, and Google's brand
+ * terms do not allow theirs to be recoloured. Each path carries its own fill.
+ */
+function GoogleIcon() {
+	return (
+		<svg aria-hidden="true" className="h-5 w-5" role="img" viewBox="0 0 24 24">
+			<title>Google</title>
+			<path
+				d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z"
+				fill="#4285F4"
+			/>
+			<path
+				d="M12 23c2.97 0 5.46-.98 7.28-2.65l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"
+				fill="#34A853"
+			/>
+			<path
+				d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84Z"
+				fill="#FBBC05"
+			/>
+			<path
+				d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 0 0-9.82 6.05l3.66 2.84c.87-2.6 3.3-4.51 6.16-4.51Z"
+				fill="#EA4335"
+			/>
 		</svg>
 	);
 }

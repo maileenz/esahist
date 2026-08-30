@@ -3,13 +3,12 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
 import Brand from "@/components/brand";
+import LanguageSelect from "@/components/language-select";
 import MemberAvatar from "@/components/member-avatar";
 import SidebarNav, { type NavItem } from "@/components/sidebar-nav";
 import SidebarShell from "@/components/sidebar-shell";
 import SignOutButton from "@/components/sign-out-button";
 import { AppearanceButton } from "@/components/theme/appearance-dialog";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { auth, signOut } from "@/server/auth";
 
 /**
@@ -26,7 +25,6 @@ import { auth, signOut } from "@/server/auth";
 export default async function SiteSidebar() {
 	const session = await auth();
 	const t = await getTranslations("nav");
-	const privacyPolicy = await getTranslations("privacyPolicy");
 	const user = session?.user;
 
 	/*
@@ -81,9 +79,14 @@ export default async function SiteSidebar() {
 
 	return (
 		<SidebarShell signedIn={Boolean(user?.username)}>
-			<Link className="shrink-0 px-4 py-4" href="/">
-				<Brand className="text-xl" />
-			</Link>
+			{/* The wordmark and the one control that has to be reachable without
+			    reading the interface first. */}
+			<div className="flex shrink-0 items-center justify-between gap-2 px-4 py-4">
+				<Link href="/">
+					<Brand className="text-xl" />
+				</Link>
+				<LanguageSelect />
+			</div>
 
 			{/* The scrolling part. It takes whatever height is left between the
 			    wordmark and the footer, so a long nav scrolls inside the rail
@@ -97,26 +100,6 @@ export default async function SiteSidebar() {
 				    one control down here that a visitor gets too. */}
 				<AppearanceButton className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 font-semibold text-muted-foreground text-sm transition hover:bg-elevated hover:text-fg" />
 
-				{/*
-				 * Labelled from `privacyPolicy.navLabel` — a short form of the
-				 * document's own title, kept in the document's own namespace. It used
-				 * to borrow `privacy.title`, which belongs to the Settings > Privacy
-				 * screen: the rail then read "Privacy" while the page it opened was
-				 * headed "Privacy policy", and renaming that settings tab would have
-				 * silently retitled this link.
-				 *
-				 * The one permanent way to the policy. The consent bar links to it too,
-				 * but that bar is gone the moment it is answered, and the settings page
-				 * behind it needs an account — so without this a signed-out reader who
-				 * has already dismissed the bar has no route to it at all.
-				 */}
-				<Link
-					className="rounded-lg px-3 py-1.5 text-subtle text-xs transition hover:bg-elevated hover:text-fg"
-					href="/privacy-policy"
-				>
-					{privacyPolicy("navLabel")}
-				</Link>
-
 				{user?.username ? (
 					<>
 						<Link
@@ -124,7 +107,7 @@ export default async function SiteSidebar() {
 							href={`/member/${user.username}`}
 						>
 							<MemberAvatar
-								className="size-7"
+								className="-ml-1 size-7"
 								image={user.image}
 								name={user.username}
 							/>
@@ -140,17 +123,25 @@ export default async function SiteSidebar() {
 					</>
 				) : (
 					/*
-					 * The one thing a visitor is here to be offered. A filled button
-					 * rather than another muted row: everything else in this rail is
+					 * The one thing a visitor is here to be offered. Filled rather than
+					 * muted like the rows above it: everything else in this rail is
 					 * navigation, and this is the only thing that changes what they can
 					 * do.
+					 *
+					 * The geometry is the rail's, not the button component's, and it is
+					 * written out rather than taken from `buttonVariants` — every size
+					 * that ships with the button sets its own height, padding and icon
+					 * gap, so a `size="sm"` button next to these rows came out shorter
+					 * with a smaller icon and its label starting at a different x. These
+					 * are the same numbers `SidebarNav` and `AppearanceButton` use, so
+					 * all four line up.
 					 */
 					<Link
-						className={cn(buttonVariants({ size: "sm" }), "mt-1 w-full")}
+						className="flex w-full items-center gap-3 rounded-lg bg-primary px-3 py-2.5 font-semibold text-primary-foreground text-sm transition hover:bg-primary/90"
 						href="/login"
 					>
-						<LogIn aria-hidden className="h-4 w-4" />
-						{t("signIn")}
+						<LogIn aria-hidden className="h-5 w-5 shrink-0" />
+						<span className="flex-1">{t("signIn")}</span>
 					</Link>
 				)}
 			</div>
